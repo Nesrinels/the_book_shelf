@@ -21,12 +21,16 @@ mongoose
      useUnifiedTopology: true 
     })
   .then(() => console.log('Connected to MongoDB'))
-  .catch((err) => { console.error('MongoDB connection error: ', err);
+  .catch((err) => { 
+    console.error('MongoDB connection error: ', err);
     process.exit(1);
   });
 
-// API Routes
-app.use(bookRoutes);
+// Mount the book routes under /api/books
+app.use('/api/books', bookRoutes);
+
+// Serve static files from the "images" folder
+app.use('/images', express.static(path.join(__dirname, 'images')));
 
 // Development vs Production setup
 if (process.env.NODE_ENV === 'production') {
