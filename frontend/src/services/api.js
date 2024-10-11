@@ -22,6 +22,15 @@ const apiService = {
     }
   },
 
+  registerUser: async (userData) => {
+    try {
+      const response = await axios.post(`${API_URL}/auth/register`, userData);
+      return response.data; // Return response data for success messages
+    } catch (error) {
+      throw error; // Throw error for handling in the component
+    }
+  },
+
   // Add more API methods as needed
 };
 

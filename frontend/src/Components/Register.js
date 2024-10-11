@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { User, Mail, Lock, EyeOff, Eye } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import axios from 'axios'; // Import axios
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -9,6 +10,7 @@ export default function RegisterPage() {
     email: '',
     password: ''
   });
+  const [message, setMessage] = useState(''); // For displaying success or error messages
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -18,9 +20,18 @@ export default function RegisterPage() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
+    try {
+      // Make the POST request to the backend
+      const response = await axios.post('http://localhost:3000/api/auth/register', formData);
+      setMessage(response.data.message); // Display success message
+      console.log('Registration successful:', response.data);
+      // Optionally, you can redirect or clear the form here
+    } catch (error) {
+      console.error('Registration error:', error);
+      setMessage(error.response?.data.message || 'Registration failed'); // Display error message
+    }
   };
 
   return (
@@ -29,11 +40,13 @@ export default function RegisterPage() {
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
           Create your account
         </h2>
+        {message && <p className="text-red-500 text-center">{message}</p>} {/* Display message */}
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
           <form className="space-y-6" onSubmit={handleSubmit}>
+            {/* Username Field */}
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-gray-700">
                 Username
@@ -54,6 +67,7 @@ export default function RegisterPage() {
               </div>
             </div>
 
+            {/* Email Field */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Email address
@@ -74,6 +88,7 @@ export default function RegisterPage() {
               </div>
             </div>
 
+            {/* Password Field */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Password
@@ -107,6 +122,7 @@ export default function RegisterPage() {
               </div>
             </div>
 
+            {/* Submit Button */}
             <div>
               <button
                 type="submit"
@@ -130,15 +146,13 @@ export default function RegisterPage() {
             </div>
 
             <div className="mt-6">
-            <Link
-              to="/signin" 
+              <Link to="/signin">
+                <button
+                  type="button"
+                  className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-700"
                 >
-              <button
-                type="button"
-                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-700"
-              >
-                Sign in
-              </button>
+                  Sign in
+                </button>
               </Link>
             </div>
           </div>

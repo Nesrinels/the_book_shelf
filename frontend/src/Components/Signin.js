@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Mail, Lock, EyeOff, Eye } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom'; // Import useNavigate for redirection
+import axios from 'axios'; // Import axios
 
 export default function SignInPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -8,6 +9,8 @@ export default function SignInPage() {
     email: '',
     password: ''
   });
+  const [message, setMessage] = useState(''); // For displaying success or error messages
+  const navigate = useNavigate(); // Initialize useNavigate for redirection
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -17,9 +20,41 @@ export default function SignInPage() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
+    if (!formData.email || !formData.password) {
+      setMessage('Please fill in all fields');
+      return;
+    }
+    try {
+      // Make the POST request to the backend
+      const response = await axios.post('http://localhost:3000/api/auth/login', formData);
+      setMessage(response.data.message); // Display success message
+      console.log('Login successful:', response.data);
+
+      // Store the token in localStorage
+      localStorage.setItem('token', response.data.token);
+
+      // Check the role from the response token or data and redirect accordingly
+      const decodedToken = JSON.parse(atob(response.data.token.split('.')[1]));
+      if (decodedToken.role === 'admin') {
+        navigate('/admin-dashboard'); // Redirect to admin dashboard
+      } else {
+        navigate('/dashboard'); // Redirect to user dashboard
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      if (error.response) {
+        setMessage(error.response.data.message || 'Login failed');
+        console.error('Error data:', error.response.data);
+      } else if (error.request) {
+        setMessage('No response from server. Please try again.');
+        console.error('Error request:', error.request);
+      } else {
+        setMessage('Error setting up request. Please try again.');
+        console.error('Error message:', error.message);
+      }
+    }
   };
 
   return (
@@ -28,11 +63,13 @@ export default function SignInPage() {
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
           Sign in to your account
         </h2>
+        {message && <p className="mt-2 text-center text-sm text-red-600">{message}</p>}
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
           <form className="space-y-6" onSubmit={handleSubmit}>
+            {/* Email Field */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Email address
@@ -53,6 +90,7 @@ export default function SignInPage() {
               </div>
             </div>
 
+            {/* Password Field */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Password
@@ -100,8 +138,7 @@ export default function SignInPage() {
               </div>
 
               <div className="text-sm">
-                <Link
-                to='/forgetpassword' className="font-medium text-emerald-700 hover:text-emerald-800">
+                <Link to='/forgetpassword' className="font-medium text-emerald-700 hover:text-emerald-800">
                   Forgot your password?
                 </Link>
               </div>
@@ -130,15 +167,13 @@ export default function SignInPage() {
             </div>
 
             <div className="mt-6">
-            <Link
-              to="/register" 
-              >
-              <button
-                type="button"
-                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-700"
-              >
-                Create an account
-              </button>
+              <Link to="/register">
+                <button
+                  type="button"
+                  className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-700"
+                >
+                  Create an account
+                </button>
               </Link>
             </div>
           </div>

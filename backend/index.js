@@ -4,7 +4,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
 const bookRoutes = require('./routes/bookRoutes');
-
+const authRoutes = require('./routes/auth'); 
 dotenv.config();
 
 const app = express();
@@ -29,6 +29,9 @@ mongoose
 // Mount the book routes under /api/books
 app.use('/api/books', bookRoutes);
 
+// Mount the auth routes under /api/auth
+app.use('/api/auth', authRoutes); 
+
 // Serve static files from the "images" folder
 app.use('/images', express.static(path.join(__dirname, 'images')));
 
@@ -43,6 +46,12 @@ if (process.env.NODE_ENV === 'production') {
     res.json({ message: 'API is running' });
   });
 }
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ message: 'Something went wrong!' });
+});
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);

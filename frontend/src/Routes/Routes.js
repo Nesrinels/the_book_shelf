@@ -1,10 +1,12 @@
 import { Route, Routes } from 'react-router-dom';
 import Register from '../Components/Register';
-import Home from '../Components/Home'; 
+import Home from '../Components/Home';
 import Signin from '../Components/Signin';
-import ForgetPassword from '../Components/ForgetPassword'; 
-import ChangePassword from '../Components/ChangePassword'; 
-import Shop from '../Components/Shop';  
+import ForgetPassword from '../Components/ForgetPassword';
+import ChangePassword from '../Components/ChangePassword';
+import Shop from '../Components/Shop';
+import AdminDashboard from '../Components/AdminDashboard'; // Import admin dashboard
+import ProtectedRoute from './ProtectedRoute'; // Import the ProtectedRoute component
 
 const AppRoutes = () => {
   return (
@@ -14,9 +16,26 @@ const AppRoutes = () => {
       <Route path="/signin" element={<Signin />} />
       <Route path="/forgetpassword" element={<ForgetPassword />} />
       <Route path="/changepassword" element={<ChangePassword />} />
-      <Route path="/shop" element={<Shop />} />
-      
-     
+
+      {/* Protected Route for Shop */}
+      <Route
+        path="/shop"
+        element={
+          <ProtectedRoute>
+            <Shop />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Protected Admin Route */}
+      <Route
+        path="/admin-dashboard"
+        element={
+          <ProtectedRoute isAdminRoute={true}>
+            <AdminDashboard />
+          </ProtectedRoute>
+        }
+      />
     </Routes>
   );
 };
