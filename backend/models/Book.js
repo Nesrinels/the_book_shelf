@@ -1,42 +1,44 @@
 const mongoose = require('mongoose');
 
-// Define the schema for books
 const bookSchema = new mongoose.Schema({
   title: {
     type: String,
-    required: true, // The title of the book is required
+    required: true,
+    trim: true
   },
   author: {
     type: String,
-    required: true, // The author of the book is required
+    required: true,
+    trim: true
   },
   genre: {
-    type: String, // Optional, to categorize books
+    type: String,
+    trim: true
   },
   price: {
     type: Number,
-    required: true, // The price of the book is required
+    required: true,
+    min: 0
   },
   description: {
-    type: String, // A short summary of the book
+    type: String,
+    trim: true
   },
   publishedYear: {
-    type: Number, // Year the book was published
+    type: Number,
+    min: 1000,
+    max: new Date().getFullYear()
   },
   pages: {
-    type: Number, // Number of pages in the book
+    type: Number,
+    min: 1
   },
   inStock: {
-    type: Boolean, // Indicates if the book is available for sale
-    default: true, // Default is true
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now, // Automatically sets the creation date
-  },
+    type: Boolean,
+    default: true
+  }
+}, {
+  timestamps: true
 });
 
-// Create the model for books
-const Book = mongoose.model('Book', bookSchema);
-
-module.exports = Book;
+module.exports = mongoose.model('Book', bookSchema);

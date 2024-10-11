@@ -1,42 +1,8 @@
 import React , { useState, useEffect }from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import apiService from '../services/api';
 
 
-// const books = [
-//   {
-//     id: 1,
-//     title: 'The Great Gatsby',
-//     author: 'F. Scott Fitzgerald',
-//     price: 10.99,
-//     description: 'A classic novel set in the Roaring Twenties, exploring themes of wealth, love, and the American Dream.',
-//     image: '/api/placeholder/300/200'
-//   },
-//   {
-//     id: 2,
-//     title: 'To Kill a Mockingbird',
-//     author: 'Harper Lee',
-//     price: 7.99,
-//     description: 'A deeply moving novel about racial injustice and moral growth in the American South.',
-//     image: '/api/placeholder/300/200'
-//   },
-//   {
-//     id: 3,
-//     title: '1984',
-//     author: 'George Orwell',
-//     price: 8.99,
-//     description: 'A dystopian novel that explores the dangers of totalitarianism and extreme political ideology.',
-//     image: '/api/placeholder/300/200'
-//   },
-//   {
-//     id: 4,
-//     title: 'Pride and Prejudice',
-//     author: 'Jane Austen',
-//     price: 6.99,
-//     description: 'A timeless love story that also critiques the societal expectations of the early 19th century.',
-//     image: '/api/placeholder/300/200'
-//   }
-// ];  
 
 const ShopPage = () => {
   const [books, setBooks] = useState([]);
@@ -46,12 +12,13 @@ const ShopPage = () => {
   useEffect(() => {
     const fetchBooks = async() => {
       try {
-        const response = await axios.get('http://localhost:5000/api/books');
-        setBooks(response.data);
+        const data = await apiService.getAllBooks();
+        setBooks(data);
         setLoading(false);
-      } catch (error) {
+      } catch (err) {
         setError('Failed to fetch books. Please try again later.');
         setLoading(false);
+        console.error('Error fetching books: ', err);
       }
     };
 
@@ -81,12 +48,13 @@ const ShopPage = () => {
         {books.map((book) => (
           <Link to={`/book/${book._id}`} key={book._id} className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col">
             <img 
-              src={book.image} 
+              src={book.image || '/api/placeholder/300/200'} 
               alt={book.title}
               className="w-full h-48 object-cover"
             />
             <div className="p-4 flex-grow">
-              <h2 className="text-xl font-semibold mb-2">{book.title}</h2>
+            <h2 className="text-xl font-semibold mb-2">{book.title}</h2>
+              <p className="text-gray-600 mb-2">By {book.author}</p>
               <p className="text-gray-600 mb-4">{book.description}</p>
               <p className="text-2xl font-bold text-emerald-700">${book.price}</p>
             </div>

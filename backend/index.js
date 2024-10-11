@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
-const bookRoutes = require('./routes/bookRoutes'); // Make sure this points to your book routes
+const bookRoutes = require('./routes/bookRoutes');
 
 dotenv.config();
 
@@ -16,23 +16,30 @@ app.use(express.json());
 
 // MongoDB Connection
 mongoose
-  .connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+  .connect(process.env.MONGO_URI, {
+     useNewUrlParser: true, 
+     useUnifiedTopology: true 
+    })
   .then(() => console.log('Connected to MongoDB'))
-  .catch((err) => console.log(err));
+  .catch((err) => { console.error('MongoDB connection error: ', err);
+    process.exit(1);
+  });
 
 // API Routes
-app.use(bookRoutes); // Make sure this points to your book routes
+app.use(bookRoutes);
 
-// Serve React frontend (for production)
-// Update the path to match your folder structure
-app.use(express.static(path.join(__dirname, '../frontend/build')));
+// Development vs Production setup
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '../frontend/build')));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
+  });
+} else {
+  app.get('/', (req, res) => {
+    res.json({ message: 'API is running' });
+  });
+}
 
-// Catch-all route to send the index.html from the React app
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
-});
-
-// Start server
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
