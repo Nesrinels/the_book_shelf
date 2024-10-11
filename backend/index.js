@@ -3,12 +3,12 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
-const bookRoutes = require('./routes/bookRoutes'); // Changed from productRoutes to bookRoutes
+const bookRoutes = require('./routes/bookRoutes'); // Make sure this points to your book routes
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
@@ -21,12 +21,15 @@ mongoose
   .catch((err) => console.log(err));
 
 // API Routes
-app.use(bookRoutes); // Changed from productRoutes to bookRoutes
+app.use(bookRoutes); // Make sure this points to your book routes
 
 // Serve React frontend (for production)
-app.use(express.static(path.join(__dirname, '../client/build')));
+// Update the path to match your folder structure
+app.use(express.static(path.join(__dirname, '../frontend/build')));
+
+// Catch-all route to send the index.html from the React app
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
+  res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
 });
 
 // Start server

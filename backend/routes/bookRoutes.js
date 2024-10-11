@@ -1,5 +1,5 @@
 const express = require('express');
-const Book = require('../models/Book'); // Adjust the path as needed
+const Book = require('../models/Book');
 const router = express.Router();
 
 // GET all books
