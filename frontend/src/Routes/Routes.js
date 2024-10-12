@@ -7,6 +7,8 @@ import ChangePassword from '../Components/ChangePassword';
 import Shop from '../Components/Shop';
 import AdminDashboard from '../Components/AdminDashboard'; // Import admin dashboard
 import ProtectedRoute from './ProtectedRoute'; // Import the ProtectedRoute component
+import Profile from '../Components/Profile'; // Import the Profile component';
+import Book from '../Components/Book'; // Import the Book component
 
 const AppRoutes = () => {
   return (
@@ -16,6 +18,10 @@ const AppRoutes = () => {
       <Route path="/signin" element={<Signin />} />
       <Route path="/forgetpassword" element={<ForgetPassword />} />
       <Route path="/changepassword" element={<ChangePassword />} />
+      <Route path="/profile" element={<Profile />} />
+      
+      {/* Missing closing tag added for the Book route */}
+      <Route path="/book/:id" element={<Book />} />
 
       {/* Protected Route for Shop */}
       <Route

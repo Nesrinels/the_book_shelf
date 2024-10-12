@@ -16,11 +16,31 @@ const userSchema = new mongoose.Schema({
     type: String, 
     required: true 
   },
+  address:{
+    type: String,
+    required: true,
+  },
+  avatar:{
+    type: String,
+    default:"https://cdn-icons-png.flaticon.com/128/3177/3177440.png",
+  },
   role: { 
     type: String, 
-    enum: ['user', 'admin'],  // Define possible roles
-    default: 'user'           // Default role is 'user'
+    enum: ['user', 'admin'],  
+    default: 'user'           
   },
+  favorites:[
+    { type:mongoose.Types.ObjectId,
+    ref:"books",
+  }],
+  cart:[
+    { type:mongoose.Types.ObjectId,
+    ref:"books",
+  }],
+  orders:[
+    { type:mongoose.Types.ObjectId,
+    ref:"order",
+  }],
 }, { timestamps: true });
 
 // Hash password before saving

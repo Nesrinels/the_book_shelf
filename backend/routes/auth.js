@@ -5,6 +5,9 @@ const jwt = require('jsonwebtoken');
 const router = express.Router();
 const authMiddleware = require('../middleware/authMiddleware');
 
+// Load environment variables
+require('dotenv').config();
+
 // Registration route
 router.post('/register', async (req, res) => {
   try {
@@ -32,12 +35,12 @@ router.post('/register', async (req, res) => {
 
 // Login route
 router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, role } = req.body;
 
   try {
     // Admin login check
-    if (email === 'admin' && password === 'admin') {
-      const token = jwt.sign({ role: 'admin' }, 'your_jwt_secret', { expiresIn: '1h' });
+    if (role === 'admin' && email === 'admin@example.com' && password === 'admin') {
+      const token = jwt.sign({ role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '1h' });
       return res.status(200).json({ token, message: 'Admin login successful' });
     }
 
@@ -54,7 +57,7 @@ router.post('/login', async (req, res) => {
     }
 
     // Generate a JWT token for regular users
-    const token = jwt.sign({ userId: user._id, role: 'user' }, 'your_jwt_secret', { expiresIn: '1h' });
+    const token = jwt.sign({ userId: user._id, role: 'user' }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
     res.status(200).json({ token, message: 'Login successful' });
   } catch (error) {

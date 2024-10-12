@@ -1,14 +1,18 @@
 const express = require('express');
-const Book = require('../models/Book');
 const router = express.Router();
+const Book = require('../models/Book');  // Make sure the path to your model is correct
+const authMiddleware = require('../middleware/authMiddleware');
+const adminMiddleware = require('../middleware/adminMiddleware');
+
+// Public routes (no authentication required)
 
 // GET all books
 router.get('/', async (req, res) => {
   try {
     const books = await Book.find().sort({ createdAt: -1 });
     res.json(books);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 });
 
@@ -20,72 +24,72 @@ router.get('/:id', async (req, res) => {
       return res.status(404).json({ message: 'Book not found' });
     }
     res.json(book);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 });
 
-// POST new books (single or multiple)
-router.post('/', async (req, res) => {
+// Protected routes (authentication and admin permissions required)
+
+// POST new books (admin only)
+router.post('/', authMiddleware, adminMiddleware, async (req, res) => {
+  const book = new Book({
+    title: req.body.title,
+    author: req.body.author,
+    description: req.body.description,
+    publishDate: req.body.publishDate,
+    pageCount: req.body.pageCount,
+    genre: req.body.genre,
+    isbn: req.body.isbn
+  });
+
   try {
-    const books = req.body;
-
-    // Check if the request is an array or a single object
-    if (Array.isArray(books)) {
-      // Validate that each book has the required fields (title, author, price)
-      for (let book of books) {
-        if (!book.title || !book.author || !book.price) {
-          return res.status(400).json({ message: 'Title, author, and price are required for all books' });
-        }
-      }
-      
-      // Insert multiple books at once
-      const newBooks = await Book.insertMany(books);
-      res.status(201).json(newBooks);
-
-    } else {
-      const { title, author, genre, price, description, publishedYear, pages, inStock } = books;
-
-      if (!title || !author || !price) {
-        return res.status(400).json({ message: 'Title, author, and price are required' });
-      }
-
-      const book = new Book({
-        title,
-        author,
-        genre,
-        price,
-        description,
-        publishedYear,
-        pages,
-        inStock
-      });
-
-      const newBook = await book.save();
-      res.status(201).json(newBook);
-    }
-  } catch (err) {
-    res.status(400).json({ message: err.message });
+    const newBook = await book.save();
+    res.status(201).json(newBook);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
   }
 });
 
-// UPDATE a book
-router.put('/:id', async (req, res) => {
+// UPDATE a book (admin only)
+router.patch('/:id', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const book = await Book.findById(req.params.id);
     if (!book) {
       return res.status(404).json({ message: 'Book not found' });
     }
 
-    const updatedBook = await Book.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (req.body.title != null) {
+      book.title = req.body.title;
+    }
+    if (req.body.author != null) {
+      book.author = req.body.author;
+    }
+    if (req.body.description != null) {
+      book.description = req.body.description;
+    }
+    if (req.body.publishDate != null) {
+      book.publishDate = req.body.publishDate;
+    }
+    if (req.body.pageCount != null) {
+      book.pageCount = req.body.pageCount;
+    }
+    if (req.body.genre != null) {
+      book.genre = req.body.genre;
+    }
+    if (req.body.isbn != null) {
+      book.isbn = req.body.isbn;
+    }
+
+    const updatedBook = await book.save();
     res.json(updatedBook);
-  } catch (err) {
-    res.status(400).json({ message: err.message });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
   }
 });
 
-// DELETE a book
-router.delete('/:id', async (req, res) => {
+// DELETE a book (admin only)
+router.delete('/:id', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const book = await Book.findById(req.params.id);
     if (!book) {
@@ -93,9 +97,9 @@ router.delete('/:id', async (req, res) => {
     }
 
     await book.remove();
-    res.json({ message: 'Book deleted successfully' });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.json({ message: 'Book deleted' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 });
 

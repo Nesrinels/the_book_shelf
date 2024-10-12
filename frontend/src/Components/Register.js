@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { User, Mail, Lock, EyeOff, Eye } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios'; // Import axios
 
 export default function RegisterPage() {
@@ -11,6 +11,7 @@ export default function RegisterPage() {
     password: ''
   });
   const [message, setMessage] = useState(''); // For displaying success or error messages
+  const navigate = useNavigate(); // Initialize useNavigate for redirection
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -28,6 +29,7 @@ export default function RegisterPage() {
       setMessage(response.data.message); // Display success message
       console.log('Registration successful:', response.data);
       // Optionally, you can redirect or clear the form here
+      navigate('/signin')
     } catch (error) {
       console.error('Registration error:', error);
       setMessage(error.response?.data.message || 'Registration failed'); // Display error message
