@@ -16,8 +16,21 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET books by genre
+router.get('/genre/:genre', async (req, res) => {
+  try {
+    const books = await Book.find({ genre: req.params.genre }); // Assuming 'genre' is a field in your Book schema
+    if (books.length === 0) {
+      return res.status(404).json({ message: 'No books found for this genre' });
+    }
+    res.json(books);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // GET a single book by ID
-router.get('/:id', async (req, res) => {
+router.get('/id/:id', async (req, res) => {
   try {
     const book = await Book.findById(req.params.id);
     if (!book) {
@@ -52,7 +65,7 @@ router.post('/', authMiddleware, adminMiddleware, async (req, res) => {
 });
 
 // UPDATE a book (admin only)
-router.patch('/:id', authMiddleware, adminMiddleware, async (req, res) => {
+router.patch('/id/:id', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const book = await Book.findById(req.params.id);
     if (!book) {
@@ -89,7 +102,7 @@ router.patch('/:id', authMiddleware, adminMiddleware, async (req, res) => {
 });
 
 // DELETE a book (admin only)
-router.delete('/:id', authMiddleware, adminMiddleware, async (req, res) => {
+router.delete('/id/:id', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const book = await Book.findById(req.params.id);
     if (!book) {

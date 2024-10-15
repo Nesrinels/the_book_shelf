@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import BlindDate from './homepage/BlindDate.js';
+import Recommendations from './homepage/Recommendations.js';
+
+
 
 // BookCarousel component (unchanged)
 const BookCarousel = ({ books }) => {
@@ -23,9 +27,9 @@ const BookCarousel = ({ books }) => {
             width: `${books.length * 100}%`
           }}>
             {books.map((book, index) => (
-              <div key={index} className="w-1/5 px-2 flex-shrink-0">
+              <div key={index} className="w-1/10 px-2 flex-shrink-0">
                 <div className="bg-emerald-700 p-4 rounded-lg shadow-lg transform hover:scale-105 transition-transform duration-200">
-                  <img src={book.imageUrl} alt={book.title} className="w-full h-64 object-cover rounded-md mb-4" />
+                  <img src={book.fullImageUrl} alt={book.title} className="w-auto h-64 object-cover rounded-md mb-4" />
                   <h3 className="text-white text-lg font-semibold truncate">{book.title}</h3>
                   <p className="text-gray-400 text-sm">{book.author}</p>
                 </div>
@@ -86,7 +90,7 @@ function Home() {
   }
 
   return (
-    <div className="home-page">
+    <div className="home-page mt-20">
       <h1 className="text-3xl font-bold text-center my-8">Welcome to Our Book Collection</h1>
       {books.length > 0 ? (
         <BookCarousel books={books} />
@@ -94,6 +98,8 @@ function Home() {
         <p className="text-center py-10">No books available at the moment.</p>
       )}
       {/* You can add more content to your home page here */}
+      <BlindDate /> {/* Add BlindDate component */}
+      <Recommendations /> {/* Add Recommendations component */}
     </div>
   );
 }

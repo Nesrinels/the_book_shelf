@@ -1,5 +1,6 @@
 import React from 'react';
 import { User, ShoppingCart, Heart, ShoppingBag, MessageSquareMore, Shield, LogOut } from 'lucide-react';
+import {Link} from 'react-router-dom';
 
 const ProfilePage = () => {
   return (
@@ -15,7 +16,7 @@ const ProfilePage = () => {
           <MenuItem icon={<User />} text="Profile" active />
           <MenuItem icon={<ShoppingCart />} text="My Cart" />
           <MenuItem icon={<Heart />} text="Wishlist" />
-          <MenuItem icon={<ShoppingBag />} text="Shop" />
+          <Link to='/shop'><MenuItem icon={<ShoppingBag />} text="Shop" /></Link>
           <MenuItem icon={<MessageSquareMore />} text="Services" />
           <MenuItem icon={<MessageSquareMore />} text="Help Desk" />
           <MenuItem icon={<Shield />} text="Privacy Policy" />

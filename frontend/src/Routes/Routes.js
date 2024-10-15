@@ -26,10 +26,7 @@ const AppRoutes = () => {
       {/* Protected Route for Shop */}
       <Route
         path="/shop"
-        element={
-          <ProtectedRoute>
-            <Shop />
-          </ProtectedRoute>
+        element={<Shop />
         }
       />
 

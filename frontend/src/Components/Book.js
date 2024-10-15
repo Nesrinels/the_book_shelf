@@ -41,7 +41,7 @@ export default function BookProductPage() {
     <div className="max-w-6xl mx-auto p-6 flex flex-col md:flex-row gap-8 mt-20">
       {/* Book details UI goes here */}
       <div className="md:w-1/2">
-        <img src={book.imageUrl} alt={book.title} className="w-full rounded-lg shadow-lg" />
+        <img src={book.fullImageUrl} alt={book.title} className="w-full rounded-lg shadow-lg" />
       </div>
       <div className="md:w-1/2">
         <h1 className="text-3xl font-bold mb-2">{book.title}</h1>

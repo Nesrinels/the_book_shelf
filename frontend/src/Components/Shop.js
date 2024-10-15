@@ -1,18 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import apiService from '../services/api';
 import { ShoppingCart, Heart } from 'lucide-react';
 
-const categories = ['All', 'Fiction', 'Non-Fiction', 'Classics', 'Sci-Fi', 'Fantasy'];
+const categories = ['All', 'Fiction', 'Romance', 'Dystopian', 'Fantasy', 'Historical Fiction', 'Adventure'];
 
 const BookCard = ({ book }) => {
   const [isHovered, setIsHovered] = useState(false); // State to track hover
 
   return (
     <div
-      className={`bg-white rounded-lg shadow-md overflow-hidden flex flex-col h-full transition-transform duration-300 ${isHovered ? 'scale-105' : ''}`} // Enlarge card on hover
-      onMouseEnter={() => setIsHovered(true)} // Set hover state to true on mouse enter
-      onMouseLeave={() => setIsHovered(false)} // Set hover state to false on mouse leave
+      className={`bg-white rounded-lg shadow-md overflow-hidden flex flex-col h-full transition-transform duration-300 ${isHovered ? 'scale-105' : ''}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       <div className="relative w-full pt-[150%]">
         <img 
@@ -41,12 +40,10 @@ const BookCard = ({ book }) => {
         <button className="w-full bg-emerald-700 text-white py-2 px-4 rounded hover:bg-emerald-800 transition duration-300">
           View Details
         </button>
-
         <div className={`flex space-x-2 mt-2 ${isHovered ? '' : 'opacity-0'} transition-opacity duration-300`}>
           <button className="w-full bg-emerald-700 text-white py-2 px-4 rounded hover:bg-emerald-800 transition duration-300 flex items-center justify-center">
             <ShoppingCart className="mr-1" size={16} />
           </button>
-
           <button className="bg-pink-600 text-white py-2 px-4 rounded hover:bg-pink-700 transition duration-300 flex items-center justify-center">
             <Heart className="mr-1" size={16} />
           </button>
@@ -93,17 +90,17 @@ const ShopPage = () => {
     fetchBooks();
   }, []);
 
-  // Function to filter books based on selected category
+  // Function to filter books based on selected genre
   const filteredBooks = books.filter((book) => {
     if (selectedCategory === 'All') return true;
-    return book.category === selectedCategory;
+    return book.genre === selectedCategory;
   });
 
   return (
     <div className="container mx-auto px-4 py-8 mt-10">
       <h1 className="text-3xl font-bold mb-6">Our Books</h1>
 
-      {/* Categories Filter */}
+      {/* Genres Filter */}
       <div className="flex space-x-4 mb-6">
         {categories.map((category) => (
           <button
@@ -133,9 +130,7 @@ const ShopPage = () => {
           ))
         ) : (
           filteredBooks.map((book) => (
-            <Link to={`/book/${book._id}`} key={book._id} className="block h-full">
-              <BookCard book={book} />
-            </Link>
+            <BookCard key={book._id} book={book} />
           ))
         )}
       </div>

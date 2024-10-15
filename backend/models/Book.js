@@ -40,7 +40,7 @@ const bookSchema = new mongoose.Schema({
   imageUrl: {
     type: String,
     trim: true,
-    default: '/images/book-cover.jpg' // Default image
+    default: '/images/1984.jpeg' // Default image
   }
 }, {
   timestamps: true
@@ -48,14 +48,15 @@ const bookSchema = new mongoose.Schema({
 
 // Virtual for full image URL
 bookSchema.virtual('fullImageUrl').get(function() {
+  // If the imageUrl is already an absolute URL (like from a CDN or remote server)
   if (this.imageUrl.startsWith('http')) {
     return this.imageUrl;
   }
-  // Assuming your Express app serves the images under /images
-  return `http://localhost:3000${this.imageUrl.replace('.', '')}`; // Replacing './' to match your Express static route
+  // Otherwise, assume it's a local image hosted on your server
+  return `http://localhost:3000${this.imageUrl}`; // No need to replace dots here
 });
 
-// Ensure virtuals are included when converting document to JSON
+// Ensure virtuals are included when converting the document to JSON or an object
 bookSchema.set('toJSON', { virtuals: true });
 bookSchema.set('toObject', { virtuals: true });
 
