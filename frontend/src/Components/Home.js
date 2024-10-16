@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import BlindDate from './homepage/BlindDate.js';
 import Recommendations from './homepage/Recommendations.js';
+import Feature from './homepage/Feature.js';
 
 
 
@@ -59,9 +60,11 @@ function Home() {
   const [books, setBooks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     fetchBooks();
+    checkAuthStatus();
   }, []);
 
   const fetchBooks = async () => {
@@ -79,6 +82,13 @@ function Home() {
       setError(error.message);
       setIsLoading(false);
     }
+  };
+
+  //New function to check authentication status
+  const checkAuthStatus = () => {
+    //This is a place holder. In a real app,you'd check with your backend or local storage
+    const token = localStorage.getItem('authToken');
+    setIsLoggedIn(!!token);
   };
 
   if (isLoading) {
@@ -99,7 +109,8 @@ function Home() {
       )}
       {/* You can add more content to your home page here */}
       <BlindDate /> {/* Add BlindDate component */}
-      <Recommendations /> {/* Add Recommendations component */}
+      {isLoggedIn && <Recommendations />} {/* Add Recommendations component */}
+      <Feature /> {/* Add Feature component */}
     </div>
   );
 }

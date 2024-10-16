@@ -35,6 +35,7 @@ router.post('/register', async (req, res) => {
 
 // Login route
 router.post('/login', async (req, res) => {
+  console.log('Received login data:', req.body);
   const { email, password, role } = req.body;
 
   try {
@@ -56,10 +57,13 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Invalid email or password' });
     }
 
-    // Generate a JWT token for regular users
+    // Generate a JWT token for regular users after successful authentication
     const token = jwt.sign({ userId: user._id, role: 'user' }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-    res.status(200).json({ token, message: 'Login successful' });
+    // Send back the token and a success message
+    res.status(201).json({ token, message: 'Login successful',
+      data:{ userId: user._id},
+     });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });

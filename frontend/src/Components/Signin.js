@@ -8,16 +8,16 @@ export default function SignInPage() {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    role: 'user'
+    role: 'user',
   });
   const [message, setMessage] = useState(''); // For displaying success or error messages
   const navigate = useNavigate(); // Initialize useNavigate for redirection
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -28,19 +28,30 @@ export default function SignInPage() {
       return;
     }
     try {
-      console.log('Sending login request with data:', formData)
+      console.log('Sending login request with data:', formData);
+
       // Make the POST request to the backend
       const response = await axios.post('http://localhost:3000/api/auth/login', formData);
-      setMessage(response.data.message); // Display success message
+
+      // Display success message
+      setMessage(response.data.message);
       console.log('Login successful:', response.data);
 
       // Store the token in localStorage
-      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('authToken', response.data.token);
 
-      // Check the role from the response token or data and redirect accordingly
-      const decodedToken = JSON.parse(atob(response.data.token.split('.')[1]));
-      console.log('Decodes token:', decodedToken);
+      // Decode the token safely (can use a library like jwt-decode for better safety)
+      let decodedToken;
+      try {
+        decodedToken = JSON.parse(atob(response.data.token.split('.')[1]));
+        console.log('Decoded token:', decodedToken);
+      } catch (err) {
+        console.error('Error decoding token:', err);
+        setMessage('Invalid token received');
+        return;
+      }
 
+      // Check the role from the response token and redirect accordingly
       if (decodedToken.role === 'admin') {
         console.log('Admin login successful, redirecting to admin dashboard');
         navigate('/admin-dashboard'); // Redirect to admin dashboard
@@ -48,15 +59,20 @@ export default function SignInPage() {
         console.log('User login successful, redirecting to user dashboard');
         navigate('/'); // Redirect to user dashboard
       }
+
     } catch (error) {
       console.error('Login error:', error);
+
       if (error.response) {
+        // Server responded with an error status
         setMessage(error.response.data.message || 'Login failed');
         console.error('Error data:', error.response.data);
       } else if (error.request) {
+        // Request was made but no response received
         setMessage('No response from server. Please try again.');
         console.error('Error request:', error.request);
       } else {
+        // Something else caused the error
         setMessage('Error setting up request. Please try again.');
         console.error('Error message:', error.message);
       }
@@ -106,7 +122,7 @@ export default function SignInPage() {
                   <Lock className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
-                  type={showPassword ? "text" : "password"}
+                  type={showPassword ? 'text' : 'password'}
                   name="password"
                   id="password"
                   className="focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 pr-10 sm:text-sm border-gray-300 rounded-md"
@@ -120,17 +136,13 @@ export default function SignInPage() {
                     onClick={() => setShowPassword(!showPassword)}
                     className="text-gray-400 hover:text-gray-500 focus:outline-none"
                   >
-                    {showPassword ? (
-                      <EyeOff className="h-5 w-5" />
-                    ) : (
-                      <Eye className="h-5 w-5" />
-                    )}
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
               </div>
             </div>
 
-{/* Role Selection */}
+            {/* Role Selection */}
             <div>
               <label htmlFor="role" className="block text-sm font-medium text-gray-700">
                 Role
@@ -168,14 +180,12 @@ export default function SignInPage() {
             </div>
 
             <div>
-              <Link to="/profile">
               <button
                 type="submit"
                 className="relative w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-emerald-700 hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-700"
               >
                 Sign in
               </button>
-              </Link>
             </div>
           </form>
 

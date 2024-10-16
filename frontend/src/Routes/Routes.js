@@ -19,8 +19,6 @@ const AppRoutes = () => {
       <Route path="/forgetpassword" element={<ForgetPassword />} />
       <Route path="/changepassword" element={<ChangePassword />} />
       <Route path="/profile" element={<Profile />} />
-      
-      {/* Missing closing tag added for the Book route */}
       <Route path="/book/:id" element={<Book />} />
 
       {/* Protected Route for Shop */}
