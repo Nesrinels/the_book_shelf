@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import BlindDate from './homepage/BlindDate.js';
 import Recommendations from './homepage/Recommendations.js';
 import Feature from './homepage/Feature.js';
+import Reviews from './homepage/Reviews.js';
 
 
 
@@ -111,6 +112,7 @@ function Home() {
       <BlindDate /> {/* Add BlindDate component */}
       {isLoggedIn && <Recommendations />} {/* Add Recommendations component */}
       <Feature /> {/* Add Feature component */}
+      <Reviews /> {/* Add Reviews component */}
     </div>
   );
 }
