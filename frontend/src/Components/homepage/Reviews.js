@@ -1,115 +1,144 @@
-// src/components/BookReviews.jsx
 import React, { useState, useEffect } from 'react';
-import apiService from '../../services/api';
+import { Star, Quote } from 'lucide-react';
 
-const BookReviews = ({ bookId }) => {
+const Reviews = () => {
   const [reviews, setReviews] = useState([]);
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [newReview, setNewReview] = useState({ rating: 5, comment: '' });
+  const [loading, setLoading] = useState(true);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
-    const fetchBookData = async () => {
+    const fetchReviews = async () => {
+      setLoading(true);
+      setError(null);
+
       try {
-        setLoading(true);
-        const [reviewsData, statsData] = await Promise.all([
-          apiService.getBookReviews(bookId),
-          apiService.getBookReviewStats(bookId)
-        ]);
-        setReviews(reviewsData);
-        setStats(statsData);
-        setError(null);
-      } catch (err) {
-        setError(err.message);
+        const response = await fetch('http://localhost:3000/api/reviews');
+        if (!response.ok) throw new Error('Failed to fetch reviews');
+        const reviewData = await response.json();
+        console.log('Fetched reviews:', reviewData);
+        setReviews(reviewData);
+      } catch (error) {
+        console.error('Error fetching review:', error.message);
+        setError('Failed to fetch reviews. Please try again later.');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchBookData();
-  }, [bookId]);
+    fetchReviews(); 
+  }, []); 
 
-  const handleSubmitReview = async (e) => {
-    e.preventDefault();
-    try {
-        // Include the new review in the body of the POST request
-      const response = await fetch('http://localhost:3000/api/reviews', {
-        method: 'POST', // Use POST to create a new review
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          book: bookId, // Pass the book ID
-          rating: newReview.rating,
-          comment: newReview.comment,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to submit review');
-      }
-
-      const submittedReview = await response.json();
-      setReviews(prevReviews => [submittedReview, ...prevReviews]); // Add the new review to the list
-      setNewReview({ rating: 5, comment: '' }); // Reset form
-      
-      // Refresh stats
-      const newStats = await apiService.getBookReviewStats(bookId);
-      setStats(newStats);
-    } catch (err) {
-      setError(err.message);
-    }
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   };
 
-  if (loading) return <div>Loading reviews...</div>;
-  if (error) return <div>Error: {error}</div>;
+  if (loading) {
+    return <div className="w-full text-center py-8">Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="w-full text-center py-8 text-red-500">{error}</div>;
+  }
+
+  const renderStars = (rating) => {
+    return (
+      <div className="flex items-center gap-1">
+        {[...Array(5)].map((_, index) => (
+          <Star
+            key={index}
+            size={20}
+            className={index < Math.floor(rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}
+          />
+        ))}
+        <span className="ml-2 text-lg font-semibold">{rating}</span>
+      </div>
+    );
+  };
 
   return (
-    <div>
-      <h2>Book Reviews</h2>
+    <div className="w-full max-w-4xl mx-auto p-8 relative overflow-hidden bg-white">
+      <h2 className="text-3xl font-bold text-emerald-900 mb-8">What Customers Said</h2>
       
-      {/* Review Stats */}
-      {stats && (
-        <div>
-          <p>Average Rating: {stats.averageRating}</p>
-          <p>Total Reviews: {stats.totalReviews}</p>
-        </div>
-      )}
-
-      {/* Review Form */}
-      <form onSubmit={handleSubmitReview}>
-        <select
-          value={newReview.rating}
-          onChange={e => setNewReview(prev => ({ ...prev, rating: Number(e.target.value) }))}
+      <div className="relative">
+        <div 
+          className="transition-transform duration-500 ease-in-out"
+          style={{ transform: `translateX(-${currentIndex * 100}%)` }}
         >
-          {[5, 4, 3, 2, 1].map(num => (
-            <option key={num} value={num}>{num} Stars</option>
-          ))}
-        </select>
-        
-        <textarea
-          value={newReview.comment}
-          onChange={e => setNewReview(prev => ({ ...prev, comment: e.target.value }))}
-          placeholder="Write your review..."
-          required
-        />
-        
-        <button type="submit">Submit Review</button>
-      </form>
+          <div className="flex">
+            {reviews.map((review, index) => (
+              <div
+                key={index}
+                className="w-full flex-shrink-0 px-4"
+              >
+                <div className="bg-white rounded-lg shadow-lg p-8">
+                  <div className="flex flex-col items-center text-center">
+                    <Quote className="text-emerald-600 mb-4" size={40} />
 
-      {/* Reviews List */}
-      <div>
-        {reviews.map(review => (
-          <div key={review._id}>
-            <p>Rating: {review.rating}/5</p>
-            <p>{review.comment}</p>
-            <p>By: {review.user.username}</p>
+                    <div className="mb-6">
+                      {review.book && (
+                        <div className="flex flex-col items-center">
+                          <img
+                            src={review.book.fyllImageUrl}
+                            alt={review.book.title}
+                            className="w-24 h-32 object-cover rounded-md mb-3"
+                          />
+                          <h4 className="text-lg font-semibold text-emerald-700">
+                            {review.book.title}
+                          </h4>
+                          <p className="text-sm text-gray-600">
+                            by {review.book.author}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <p className="text-gray-600 italic mb-6 text-lg">
+                      {review.comment}
+                    </p>
+                    
+                    <div className="mb-4">
+                      {renderStars(review.rating)}
+                    </div>
+                    
+                    <div className="mt-4">
+                      <h3 className="text-xl font-semibold text-emerald-900">
+                        {review.user?.username || 'Anonymous'}
+                      </h3>
+                      <p className="text-gray-500">
+                        {formatDate(review.createdAt)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
+        </div>
+      </div>
+      
+      {/* Navigation Dots */}
+      <div className="flex justify-center mt-6 gap-2">
+        {reviews.map((_, index) => (
+          <button
+            key={index}
+            className={`w-3 h-3 rounded-full transition-colors duration-300 ${
+              currentIndex === index ? 'bg-emerald-600' : 'bg-gray-300'
+            }`}
+            onClick={() => setCurrentIndex(index)}
+            aria-label={`Go to review ${index + 1}`}
+          />
         ))}
       </div>
     </div>
   );
 };
 
-export default BookReviews;
+export default Reviews;

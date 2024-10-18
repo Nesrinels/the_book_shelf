@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const Book = require('../models/Book');  // Make sure the path to your model is correct
+const Book = require('../models/Book');
 const authMiddleware = require('../middleware/authMiddleware');
 const adminMiddleware = require('../middleware/adminMiddleware');
 

@@ -4,8 +4,8 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
 const bookRoutes = require('./routes/bookRoutes');
-const authRoutes = require('./routes/auth');
-const reviewRoutes = require('./routes/reviewRoutes'); 
+const authRoutes = require('./routes/auth'); 
+const reviewRoutes = require('./routes/reviewRoutes');
 dotenv.config();
 
 const app = express();
@@ -36,8 +36,10 @@ app.use('/api/auth', authRoutes);
 // Serve static files from the "images" folder
 app.use('/images', express.static(path.join(__dirname, 'images')));
 
-
 app.use('/api/reviews', reviewRoutes);
+
+
+
 
 // Development vs Production setup
 if (process.env.NODE_ENV === 'production') {

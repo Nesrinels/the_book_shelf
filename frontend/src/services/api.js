@@ -80,7 +80,16 @@ const apiService = {
 
   getBookReviews: async (bookId) => {
     try {
-      const response = await axiosInstance.get(`/reviews/book/${bookId}`);
+      const response = await axiosInstance.get(`/books/${bookId}/reviews`);
+      return response.data;
+    } catch (error) {
+      throw apiService.handleError(error);
+    }
+  },
+
+  getBookReviewStats: async (bookId) => {
+    try {
+      const response = await axiosInstance.get(`/books/${bookId}/stats`);
       return response.data;
     } catch (error) {
       throw apiService.handleError(error);
@@ -96,12 +105,12 @@ const apiService = {
     }
   },
 
-  createReview: async ({ bookId, rating, comment }) => {
+  createReview: async (reviewData) => {
     try {
       const response = await axiosInstance.post('/reviews', {
-        book: bookId,
-        rating,
-        comment
+        book: reviewData.bookId,
+        rating: reviewData.rating,
+        comment: reviewData.comment
       });
       return response.data;
     } catch (error) {
@@ -109,11 +118,11 @@ const apiService = {
     }
   },
 
-  updateReview: async (reviewId, { rating, comment }) => {
+  updateReview: async (reviewId, reviewData) => {
     try {
       const response = await axiosInstance.put(`/reviews/${reviewId}`, {
-        rating,
-        comment
+        rating: reviewData.rating,
+        comment: reviewData.comment
       });
       return response.data;
     } catch (error) {
@@ -124,15 +133,6 @@ const apiService = {
   deleteReview: async (reviewId) => {
     try {
       const response = await axiosInstance.delete(`/reviews/${reviewId}`);
-      return response.data;
-    } catch (error) {
-      throw apiService.handleError(error);
-    }
-  },
-
-  getBookReviewStats: async (bookId) => {
-    try {
-      const response = await axiosInstance.get(`/reviews/stats/${bookId}`);
       return response.data;
     } catch (error) {
       throw apiService.handleError(error);

@@ -4,7 +4,7 @@ import BlindDate from './homepage/BlindDate.js';
 import Recommendations from './homepage/Recommendations.js';
 import Feature from './homepage/Feature.js';
 import Reviews from './homepage/Reviews.js';
-
+import Footer from './Footer.js';
 
 
 // BookCarousel component (unchanged)
@@ -113,6 +113,7 @@ function Home() {
       {isLoggedIn && <Recommendations />} {/* Add Recommendations component */}
       <Feature /> {/* Add Feature component */}
       <Reviews /> {/* Add Reviews component */}
+      <Footer /> {/* Add Footer component */}
     </div>
   );
 }
