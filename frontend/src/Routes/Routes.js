@@ -8,7 +8,8 @@ import Shop from '../Components/Shop';
 import AdminDashboard from '../Components/AdminDashboard'; // Import admin dashboard
 import ProtectedRoute from './ProtectedRoute'; // Import the ProtectedRoute component
 import Profile from '../Components/Profile'; // Import the Profile component';
-import Book from '../Components/Book'; // Import the Book component
+import Book from '../Components/Book'; // Import the Book component;
+import CartPage from '../Components/Cartpage/CartPage'; // Import the CartPage component
 
 const AppRoutes = () => {
   return (
@@ -20,6 +21,7 @@ const AppRoutes = () => {
       <Route path="/changepassword" element={<ChangePassword />} />
       <Route path="/profile" element={<Profile />} />
       <Route path="/book/:id" element={<Book />} />
+      <Route path="/cart" element={<CartPage />} />
 
       {/* Protected Route for Shop */}
       <Route

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, ShoppingBag, Bell, Menu, X, Heart, User } from 'lucide-react';
+import { Search, Bell, Menu, X, Heart, User } from 'lucide-react';
 import logo from './logo/logo2.png';
+import Cart from './Cartpage/Cart';
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -105,10 +106,7 @@ export default function Navbar() {
                 <Bell className="h-6 w-6" />
                 <span className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center text-xs text-white bg-red-500 rounded-full">3</span>
               </button>
-              <button className="relative p-2 text-gray-600 hover:text-gray-900">
-                <ShoppingBag className="h-6 w-6" />
-                <span className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center text-xs text-white bg-red-500 rounded-full">2</span>
-              </button>
+              <Cart />
 
               {isLoggedIn ? (
                 <div className="relative">
