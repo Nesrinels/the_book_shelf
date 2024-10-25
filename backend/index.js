@@ -6,6 +6,7 @@ const path = require('path');
 const bookRoutes = require('./routes/bookRoutes');
 const authRoutes = require('./routes/auth'); 
 const reviewRoutes = require('./routes/reviewRoutes');
+const cartRoutes = require('./routes/cartRoutes');
 dotenv.config();
 
 const app = express();
@@ -37,6 +38,10 @@ app.use('/api/auth', authRoutes);
 app.use('/images', express.static(path.join(__dirname, 'images')));
 
 app.use('/api/reviews', reviewRoutes);
+
+app.use('/api/cart', cartRoutes);
+
+
 
 
 

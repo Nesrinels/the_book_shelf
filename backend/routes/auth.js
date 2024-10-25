@@ -41,7 +41,7 @@ router.post('/login', async (req, res) => {
   try {
     // Admin login check
     if (role === 'admin' && email === 'admin@example.com' && password === 'admin') {
-      const token = jwt.sign({ role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+      const token = jwt.sign({ role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '1d' });
       return res.status(200).json({ token, message: 'Admin login successful' });
     }
 
@@ -58,7 +58,7 @@ router.post('/login', async (req, res) => {
     }
 
     // Generate a JWT token for regular users after successful authentication
-    const token = jwt.sign({ userId: user._id, role: 'user' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const token = jwt.sign({ userId: user._id, role: 'user' }, process.env.JWT_SECRET, { expiresIn: '1d' });
 
     // Send back the token and a success message
     res.status(201).json({ token, message: 'Login successful',

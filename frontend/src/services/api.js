@@ -1,5 +1,3 @@
-// src/services/api.js
-
 import axios from 'axios';
 import API_URL from '../config/api';
 
@@ -138,6 +136,24 @@ const apiService = {
       throw apiService.handleError(error);
     }
   },
+
+  addToCart: async (bookId) => {
+    try {
+      const response = await axiosInstance.post(`/cart/add`, { bookId});
+      return response.data;
+    } catch (error) {
+      throw apiService.handleError(error);
+    }
+  },
+
+  getCartItems: async () => {
+    try {
+      const response = await axiosInstance.get(`/cart`);
+      return response.data;
+    } catch (error) {
+      throw apiService.handleError(error);
+  }
+},
 
   // Error Handler
   handleError: (error) => {

@@ -65,7 +65,7 @@ const CartPage = () => {
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
+    <div className="max-w-6xl mx-auto p-6 mt-16">
       <h1 className="text-3xl font-bold mb-8">Cart</h1>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -123,9 +123,7 @@ const CartPage = () => {
           <div className="bg-white rounded-lg shadow-md p-6 space-y-6">
             <div>
               <h2 className="text-lg font-semibold mb-4">Calculate Shipping</h2>
-              <select className="w-full p-2 border rounded mb-4 focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                <option>Credit Card Type</option>
-              </select>
+              
               <div className="space-y-4">
                 <input
                   type="text"
