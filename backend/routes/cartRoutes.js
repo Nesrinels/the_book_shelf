@@ -76,7 +76,7 @@ router.post('/add', auth, async (req, res) => {
   router.delete('/remove/:bookId', auth, async (req, res) => {
     try {
       const cart = await Cart.findOne(
-        { userId: req.user.id },
+        { user: req.user.id },
       );
       
       if (!cart) {

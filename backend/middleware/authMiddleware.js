@@ -18,6 +18,10 @@ const authMiddleware = async (req, res, next) => {
     // Verify the token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
+    if (!decoded.userId) {
+      return res.status(401).json({ message: 'Invalid token playload' });
+    }
+
     // Fetch the user from the database
     const user = await User.findById(decoded.userId); // Ensure your token includes `userId`
     if (!user) {
