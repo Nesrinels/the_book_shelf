@@ -1,185 +1,193 @@
 import axios from 'axios';
-import API_URL from '../config/api';
 
-// Create axios instance with config URL
-const axiosInstance = axios.create({
-  baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  timeout: 10000, // 10 second timeout
-});
+// Ensure API_URL is properly defined
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
 
-// Add request interceptor for auth token
-axiosInstance.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
+class ApiService {
+  constructor() {
+    this.client = axios.create({
+      baseURL: API_URL,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      timeout: 10000,
+    });
+
+    // Initialize request interceptor
+    this.client.interceptors.request.use(
+      (config) => {
+        const token = localStorage.getItem('authToken'); // Match the token key with your signin page
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+      },
+      (error) => Promise.reject(this.handleError(error))
+    );
+
+    // Initialize response interceptor
+    this.client.interceptors.response.use(
+      (response) => response.data,
+      async (error) => {
+        // Handle token expiration
+        if (error.response?.status === 401) {
+          this.clearAuth();
+          // Use window.location.replace for smoother redirect
+          window.location.replace('/login');
+          return Promise.reject(this.handleError(error));
+        }
+        return Promise.reject(this.handleError(error));
+      }
+    );
   }
-);
 
-// Add response interceptor for error handling
-axiosInstance.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // Handle token expiration
-      localStorage.removeItem('token');
-      // You might want to redirect to login or refresh token here
-    }
-    return Promise.reject(error);
+  clearAuth() {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('userRole');
   }
-);
 
-const apiService = {
-  // Auth & Books
-  getAllBooks: async () => {
-    try {
-      const response = await axiosInstance.get('/books');
-      return response.data;
-    } catch (error) {
-      throw apiService.handleError(error);
-    }
-  },
-
-  getBookById: async (id) => {
-    try {
-      const response = await axiosInstance.get(`/books/${id}`);
-      return response.data;
-    } catch (error) {
-      throw apiService.handleError(error);
-    }
-  },
-
-  registerUser: async (userData) => {
-    try {
-      const response = await axiosInstance.post('/auth/register', userData);
-      return response.data;
-    } catch (error) {
-      throw apiService.handleError(error);
-    }
-  },
-
-  // Reviews
-  getAllReviews: async () => {
-    try {
-      const response = await axiosInstance.get('/reviews');
-      return response.data;
-    } catch (error) {
-      throw apiService.handleError(error);
-    }
-  },
-
-  getBookReviews: async (bookId) => {
-    try {
-      const response = await axiosInstance.get(`/books/${bookId}/reviews`);
-      return response.data;
-    } catch (error) {
-      throw apiService.handleError(error);
-    }
-  },
-
-  getBookReviewStats: async (bookId) => {
-    try {
-      const response = await axiosInstance.get(`/books/${bookId}/stats`);
-      return response.data;
-    } catch (error) {
-      throw apiService.handleError(error);
-    }
-  },
-
-  getUserReviews: async (userId) => {
-    try {
-      const response = await axiosInstance.get(`/reviews/user/${userId}`);
-      return response.data;
-    } catch (error) {
-      throw apiService.handleError(error);
-    }
-  },
-
-  createReview: async (reviewData) => {
-    try {
-      const response = await axiosInstance.post('/reviews', {
-        book: reviewData.bookId,
-        rating: reviewData.rating,
-        comment: reviewData.comment
-      });
-      return response.data;
-    } catch (error) {
-      throw apiService.handleError(error);
-    }
-  },
-
-  updateReview: async (reviewId, reviewData) => {
-    try {
-      const response = await axiosInstance.put(`/reviews/${reviewId}`, {
-        rating: reviewData.rating,
-        comment: reviewData.comment
-      });
-      return response.data;
-    } catch (error) {
-      throw apiService.handleError(error);
-    }
-  },
-
-  deleteReview: async (reviewId) => {
-    try {
-      const response = await axiosInstance.delete(`/reviews/${reviewId}`);
-      return response.data;
-    } catch (error) {
-      throw apiService.handleError(error);
-    }
-  },
-
-  addToCart: async (bookId) => {
-    try {
-      const response = await axiosInstance.post(`/cart/add`, { bookId});
-      return response.data;
-    } catch (error) {
-      throw apiService.handleError(error);
-    }
-  },
-
-  getCartItems: async () => {
-    try {
-      const response = await axiosInstance.get(`/cart`);
-      return response.data;
-    } catch (error) {
-      throw apiService.handleError(error);
+  setAuth(token, userId, role) {
+    localStorage.setItem('authToken', token);
+    if (userId) localStorage.setItem('userId', userId);
+    if (role) localStorage.setItem('userRole', role);
   }
-},
 
-  // Error Handler
-  handleError: (error) => {
-    const errorResponse = {
+  handleError(error) {
+    let errorResponse = {
       message: 'An unexpected error occurred',
       status: 500,
-      data: null
+      data: null,
     };
 
     if (error.response) {
       // Server responded with error
-      errorResponse.status = error.response.status;
-      errorResponse.message = error.response.data.message || 'Server error';
-      errorResponse.data = error.response.data;
+      errorResponse = {
+        message: error.response.data?.message || 'Server error',
+        status: error.response.status,
+        data: error.response.data,
+      };
     } else if (error.request) {
       // Request made but no response
-      errorResponse.status = 503;
-      errorResponse.message = 'Service unavailable';
+      errorResponse = {
+        message: 'Unable to reach the server. Please check your connection.',
+        status: 503,
+        data: null,
+      };
     } else {
-      // Error in request setup
-      errorResponse.status = 400;
-      errorResponse.message = error.message || 'Bad request';
+      // Request setup error
+      errorResponse = {
+        message: error.message || 'Request failed',
+        status: 400,
+        data: null,
+      };
     }
 
+    console.error('[API Error]:', errorResponse);
     return errorResponse;
   }
-};
 
+  // Auth endpoints
+  async login(credentials) {
+    try {
+      const response = await this.client.post('/auth/login', credentials);
+      if (response.token) {
+        const { token, user } = response;
+        this.setAuth(token, user?.id, user?.role);
+      }
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  async register(userData) {
+    try {
+      return await this.client.post('/auth/register', userData);
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  logout() {
+    this.clearAuth();
+    // Use replace for smoother redirect
+    window.location.replace('/login');
+  }
+
+  // Book endpoints
+  async getAllBooks(params = {}) {
+    try {
+      return await this.client.get('/books', { params });
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  async getBookById(id) {
+    try {
+      return await this.client.get(`/books/${id}`);
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  // Review endpoints
+  async createReview(reviewData) {
+    try {
+      return await this.client.post('/reviews', {
+        bookId: reviewData.bookId,
+        rating: reviewData.rating,
+        comment: reviewData.comment,
+      });
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  // Cart endpoints
+  async addToCart(bookId, quantity = 1) {
+    try {
+      return await this.client.post('/cart/add', { bookId, quantity });
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  async getCartItems() {
+    try {
+      return await this.client.get('/cart');
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  async removeFromCart(bookId) {
+    try {
+      return await this.client.delete(`/cart/${bookId}`);
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  async updateCartItem(bookId, quantity) {
+    try {
+      return await this.client.put(`/cart/${bookId}`, { quantity });
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  // Check auth status
+  isAuthenticated() {
+    return !!localStorage.getItem('authToken');
+  }
+
+  getUserRole() {
+    return localStorage.getItem('userRole');
+  }
+}
+
+// Create and export a single instance
+const apiService = new ApiService();
 export default apiService;

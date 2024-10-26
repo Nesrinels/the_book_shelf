@@ -1,81 +1,94 @@
 import { useState } from 'react';
 import { Mail, Lock, EyeOff, Eye } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom'; // Import useNavigate for redirection
-import axios from 'axios'; // Import axios
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 export default function SignInPage() {
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     role: 'user',
   });
-  const [message, setMessage] = useState(''); // For displaying success or error messages
-  const navigate = useNavigate(); // Initialize useNavigate for redirection
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
       [name]: value,
     }));
+    // Clear error when user starts typing
+    if (error) setError('');
+  };
+
+  const validateForm = () => {
+    if (!formData.email || !formData.password) {
+      setError('Please fill in all fields');
+      return false;
+    }
+    if (!formData.email.includes('@')) {
+      setError('Please enter a valid email address');
+      return false;
+    }
+    return true;
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!formData.email || !formData.password) {
-      setMessage('Please fill in all fields');
-      return;
-    }
+    e.preventDefault(); // Prevent form submission from refreshing the page
+    
+    if (!validateForm()) return;
+
+    setIsLoading(true);
+    setError('');
+
     try {
-      console.log('Sending login request with data:', formData);
+      const response = await axios.post(
+        'http://localhost:3000/api/auth/login',
+        formData,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
-      // Make the POST request to the backend
-      const response = await axios.post('http://localhost:3000/api/auth/login', formData);
+      const { token } = response.data;
+      
+      if (!token) {
+        throw new Error('No token received from server');
+      }
 
-      // Display success message
-      setMessage(response.data.message);
-      console.log('Login successful:', response.data);
+      // Store token securely
+      localStorage.setItem('authToken', token);
 
-      // Store the token in localStorage
-      localStorage.setItem('authToken', response.data.token);
-
-      // Decode the token safely (can use a library like jwt-decode for better safety)
-      let decodedToken;
+      // Decode token and handle routing
       try {
-        decodedToken = JSON.parse(atob(response.data.token.split('.')[1]));
-        console.log('Decoded token:', decodedToken);
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const destination = payload.role === 'admin' ? '/admin-dashboard' : '/';
+        navigate(destination, { replace: true });
       } catch (err) {
-        console.error('Error decoding token:', err);
-        setMessage('Invalid token received');
-        return;
+        console.error('Token parsing error:', err);
+        setError('Authentication failed. Please try again.');
+        localStorage.removeItem('authToken');
       }
 
-      // Check the role from the response token and redirect accordingly
-      if (decodedToken.role === 'admin') {
-        console.log('Admin login successful, redirecting to admin dashboard');
-        navigate('/admin-dashboard'); // Redirect to admin dashboard
+    } catch (err) {
+      console.error('Login error:', err);
+      
+      if (err.response?.status === 401) {
+        setError('Invalid email or password');
+      } else if (err.response?.status === 403) {
+        setError('Account is not authorized');
+      } else if (!navigator.onLine) {
+        setError('Please check your internet connection');
       } else {
-        console.log('User login successful, redirecting to user dashboard');
-        navigate('/'); // Redirect to user dashboard
+        setError('An error occurred. Please try again later.');
       }
-
-    } catch (error) {
-      console.error('Login error:', error);
-
-      if (error.response) {
-        // Server responded with an error status
-        setMessage(error.response.data.message || 'Login failed');
-        console.error('Error data:', error.response.data);
-      } else if (error.request) {
-        // Request was made but no response received
-        setMessage('No response from server. Please try again.');
-        console.error('Error request:', error.request);
-      } else {
-        // Something else caused the error
-        setMessage('Error setting up request. Please try again.');
-        console.error('Error message:', error.message);
-      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -85,12 +98,16 @@ export default function SignInPage() {
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
           Sign in to your account
         </h2>
-        {message && <p className="mt-2 text-center text-sm text-red-600">{message}</p>}
+        {error && (
+          <div className="mt-2 text-center text-sm text-red-600 bg-red-50 p-2 rounded">
+            {error}
+          </div>
+        )}
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          <form className="space-y-6" onSubmit={handleSubmit} noValidate>
             {/* Email Field */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
@@ -104,10 +121,13 @@ export default function SignInPage() {
                   type="email"
                   name="email"
                   id="email"
+                  autoComplete="email"
+                  required
                   className="focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md"
                   placeholder="you@example.com"
                   value={formData.email}
                   onChange={handleInputChange}
+                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -125,20 +145,26 @@ export default function SignInPage() {
                   type={showPassword ? 'text' : 'password'}
                   name="password"
                   id="password"
+                  autoComplete="current-password"
+                  required
                   className="focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 pr-10 sm:text-sm border-gray-300 rounded-md"
                   placeholder="••••••••"
                   value={formData.password}
                   onChange={handleInputChange}
+                  disabled={isLoading}
                 />
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="text-gray-400 hover:text-gray-500 focus:outline-none"
-                  >
-                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  disabled={isLoading}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5 text-gray-400" />
+                  ) : (
+                    <Eye className="h-5 w-5 text-gray-400" />
+                  )}
+                </button>
               </div>
             </div>
 
@@ -153,6 +179,7 @@ export default function SignInPage() {
                 className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
                 value={formData.role}
                 onChange={handleInputChange}
+                disabled={isLoading}
               >
                 <option value="user">User</option>
                 <option value="admin">Admin</option>
@@ -166,6 +193,7 @@ export default function SignInPage() {
                   name="remember-me"
                   type="checkbox"
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  disabled={isLoading}
                 />
                 <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
                   Remember me
@@ -173,7 +201,10 @@ export default function SignInPage() {
               </div>
 
               <div className="text-sm">
-                <Link to='/forgetpassword' className="font-medium text-emerald-700 hover:text-emerald-800">
+                <Link
+                  to="/forgot-password"
+                  className="font-medium text-emerald-700 hover:text-emerald-800"
+                >
                   Forgot your password?
                 </Link>
               </div>
@@ -182,9 +213,10 @@ export default function SignInPage() {
             <div>
               <button
                 type="submit"
-                className="relative w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-emerald-700 hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-700"
+                className="relative w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-emerald-700 hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isLoading}
               >
-                Sign in
+                {isLoading ? 'Signing in...' : 'Sign in'}
               </button>
             </div>
           </form>
@@ -206,6 +238,7 @@ export default function SignInPage() {
                 <button
                   type="button"
                   className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-700"
+                  disabled={isLoading}
                 >
                   Create an account
                 </button>

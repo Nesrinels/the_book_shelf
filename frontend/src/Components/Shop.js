@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ShoppingCart, Heart, X } from 'lucide-react';
 import apiService from '../services/api';
+import { useCart } from './Cartpage/CartContext';
 
 const categories = ['All', 'Fiction', 'Romance', 'Dystopian', 'Fantasy', 'Historical Fiction', 'Adventure'];
 
@@ -15,27 +16,26 @@ const Notification = ({ message, type, onClose }) => (
   </div>
 );
 
-const BookCard = ({ book, setNotification, setCartItems }) => {
+const BookCard = ({ book, setNotification }) => {
   const [addingToCart, setAddingToCart] = useState(false);
-  const isLoading = addingToCart;
+  const { addItem } = useCart();
 
   const handleAddToCart = async (e) => {
     e.preventDefault();
     e.stopPropagation();
 
-    if (isLoading) return;
+    if (addingToCart) return;
 
     setAddingToCart(true);
     try {
-
-      const response = await apiService.post('/cart/add',{
-        bookId: book._id,
-        quantity: 1
+      await addItem({
+        _id: book._id,
+        title: book.title,
+        author: book.author,
+        price: book.price,
+        imageUrl: book.fullImageUrl,
       });
 
-      setCartItems(prevItems => [...prevItems, response.data]);
-
-      // await apiService.addToCart(book._id); // Use API service to add to cart
       setNotification({
         message: 'Successfully added to cart!',
         type: 'success'
@@ -74,9 +74,9 @@ const BookCard = ({ book, setNotification, setCartItems }) => {
           <div className="flex space-x-2">
             <button
               onClick={handleAddToCart}
-              disabled={isLoading}
+              disabled={addingToCart}
               className={`p-2 rounded-full bg-emerald-700 text-white hover:bg-emerald-800 transition-colors ${
-                isLoading ? 'opacity-50 cursor-not-allowed' : ''
+                addingToCart ? 'opacity-50 cursor-not-allowed' : ''
               }`}
             >
               <ShoppingCart size={18} />
@@ -115,28 +115,20 @@ const ShopPage = () => {
   const [error, setError] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [notification, setNotification] = useState(null);
-  const [cartItems, setCartItems] = useState([]);
+  const { fetchCartItems } = useCart();
 
   useEffect(() => {
-    const fetchCartItems = async () => {
-      try {
-        const response = await apiService.get('/cart');
-        setCartItems(response.data);
-      } catch (error) {
-        console.error('Error fetching cart items:',error);
-      }
-    };
     fetchCartItems();
-  }, []);
+  }, [fetchCartItems]);
 
   useEffect(() => {
     const fetchBooks = async () => {
       try {
         const data = await apiService.getAllBooks();
         setBooks(data);
-        setLoading(false);
       } catch (error) {
         setError(error?.message || 'Failed to load books.');
+      } finally {
         setLoading(false);
       }
     };
@@ -153,7 +145,6 @@ const ShopPage = () => {
       <div className="max-w-7xl mx-auto px-4 py-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Our Books</h1>
         
-        {/* Category filters */}
         <div className="mb-8">
           <div className="flex flex-wrap gap-2">
             {categories.map((category) => (
@@ -172,7 +163,6 @@ const ShopPage = () => {
           </div>
         </div>
 
-        {/* Books grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {loading ? (
             <>
@@ -189,7 +179,6 @@ const ShopPage = () => {
                 key={book._id} 
                 book={book} 
                 setNotification={setNotification}
-                setCartItems={setCartItems}
               />
             ))
           ) : (
