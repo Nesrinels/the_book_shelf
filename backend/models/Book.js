@@ -41,7 +41,20 @@ const bookSchema = new mongoose.Schema({
     type: String,
     trim: true,
     default: '/images/1984.jpeg' // Default image
-  }
+  },
+  averageRating: {
+    type: Number,
+    default: 0
+  },
+  reviewsCount: {
+    type: Number,
+    default: 0
+  },
+  readers: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }]
+
 }, {
   timestamps: true
 });

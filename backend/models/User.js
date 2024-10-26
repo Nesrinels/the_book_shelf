@@ -20,10 +20,52 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  avatar:{
+  profilePicture:{
     type: String,
     default:"https://cdn-icons-png.flaticon.com/128/3177/3177440.png",
   },
+  bio: {
+    type: String,
+    maxLength: 500
+  },
+  readingChallenge: {
+    year: Number,
+    goal: Number,
+    current: Number
+  },
+  lastYearBooks: {
+    year: Number,
+    count: Number
+  },
+  following: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
+  friends: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
+  groups: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Group'
+  }],
+  booksRead: [{
+    book: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Book'
+    },
+    dateRead: Date,
+    rating: Number
+  }],
+  currentlyReading: [{
+    book: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Book'
+    },
+    startDate: Date,
+    progress: Number
+  }],
+
   role: { 
     type: String, 
     enum: ['user', 'admin'],  
