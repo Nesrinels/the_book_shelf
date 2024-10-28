@@ -30,12 +30,12 @@ class ApiService {
       (response) => response.data,
       async (error) => {
         // Handle token expiration
-        if (error.response?.status === 401) {
-          this.clearAuth();
-          // Use window.location.replace for smoother redirect
-          window.location.replace('/login');
-          return Promise.reject(this.handleError(error));
-        }
+        // if (error.response?.status === 401) {
+        //   this.clearAuth();
+        //   // Use window.location.replace for smoother redirect
+        //   window.location.replace('/login');
+        //   return Promise.reject(this.handleError(error));
+        // }
         return Promise.reject(this.handleError(error));
       }
     );

@@ -1,60 +1,148 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Heart, MessageCircle, Book, Users, BookOpen, Target } from 'lucide-react';
+import apiService from '../services/api';
 
 const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState('PROFILE');
-  
-  const userStats = {
-    booksRead: 48,
-    following: 234,
-    friends: 156,
-    yearlyChallenge: {
-      goal: 50,
-      current: 23,
-    },
-    lastYearBooks: 42,
-    genres: [
-      { name: 'Fantasy', count: 15 },
-      { name: 'Science Fiction', count: 12 },
-      { name: 'Mystery', count: 8 },
-      { name: 'Romance', count: 5 },
-    ],
-    groups: [
-      { name: 'Fantasy Book Club', members: 1234 },
-      { name: 'Science Fiction Readers', members: 856 },
-      { name: 'Mystery Lovers', members: 654 },
-    ]
+  const [userData, setUserData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchUserData();
+  }, []);
+
+  const fetchUserData = async () => {
+    try {
+      const userId = localStorage.getItem('userId');
+      if (!userId) {
+        setError('User not authenticated');
+        setLoading(false);
+        return; // Don't call logout, just handle it with the error state
+      }
+      const response = await apiService.client.get(`/users/${userId}`);
+
+      if (!response || !response.data) {
+        throw new Error('Invalid response from server');
+      }
+
+      const data = response.data;
+      const transformedData = {
+        username: data.username,
+        bio: data.bio,
+        profilePicture: data.profilePicture || 'https://cdn-icons-png.flaticon.com/128/3177/3177440.png',
+        booksRead: data.booksRead || [],
+        booksReadCount: data.booksRead?.length || 0,
+        following: data.following || [],
+        followingCount: data.following?.length || 0,
+        friends: data.friends || [],
+        friendsCount: data.friends?.length || 0,
+        readingChallenge: {
+          goal: data.readingChallenge?.goal || 0,
+          current: data.readingChallenge?.current || 0
+        },
+        lastYearBooks: data.lastYearBooks || 0,
+        groups: data.groups || [],
+        genres: calculateGenres(data.booksRead || [])
+      };
+
+      setUserData(transformedData);
+      setLoading(false);
+    } catch (error) {
+      setError(error.message);
+      setLoading(false);
+      // No need to call logout here
+    }
   };
 
+  const calculateGenres = (booksRead) => {
+    const genreCounts = {};
+    booksRead.forEach(book => {
+      if (book.genre) {
+        genreCounts[book.genre] = (genreCounts[book.genre] || 0) + 1;
+      }
+    });
+
+    return Object.entries(genreCounts)
+    .map(([name, count]) =>({name, count}))
+    .sort((a, b) => b.count - a.count)
+    .slice(0,4);
+  };
+
+  const handleEditProfile = async (updatedData) => {
+    try {
+      const userId = localStorage.getItem('userId');
+      await apiService.client.put(`/users/${userId}`, updatedData);
+      await fetchUserData();
+    } catch (error) {
+      console.error('Error updating profile', error);
+      setError(error.message || 'Failed to update profile');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center p-4">
+          <p className="text-red-600 mb-4">{error}</p>
+          <button 
+            onClick={fetchUserData}
+            className="bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className='min-h-screen flex items-center justify-center'>
+        <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600'></div>
+      </div>
+    );
+  }
+
+  if (!userData) return null;
+
   return (
-    <div className="bg-gray-100 min-h-screen">
+    <div className="bg-gray-100 min-h-screen mt-16">
       {/* Header Banner */}
       <div className="relative h-32 sm:h-48 bg-gray-300">
         <div className="absolute bottom-0 left-4 sm:left-8 transform translate-y-1/2">
           <img 
-            src="https://cdn-icons-png.flaticon.com/128/3177/3177440.png"
+            src={userData.profilePicture}
             alt="Profile"
-            className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-4 border-white"
+            className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-4 border-white object-cover"
           />
         </div>
-        <button className="absolute top-4 right-4 bg-white px-3 py-1 sm:px-4 sm:py-2 rounded-md text-sm">
+        <button
+        onClick={() => {
+          handleEditProfile({
+            bio: "Updated bio"
+          });
+        }}
+        className="absolute top-4 right-4 bg-white px-3 py-1 sm:px-4 sm:py-2 rounded-md text-sm">
           Edit Profile
         </button>
       </div>
 
       {/* Profile Info */}
       <div className="pt-12 sm:pt-16 px-4 sm:px-8">
-        <h1 className="text-xl sm:text-2xl font-bold">Sean Ngu</h1>
+        <h1 className="text-xl sm:text-2xl font-bold">{userData.username}</h1>
         <p className="text-sm sm:text-base text-gray-600 mt-2">
-          Book lover | Fantasy enthusiast | Always reading something new
+          {userData.bio || 'no bio added yet'}
         </p>
       </div>
 
       {/* Stats Bar */}
       <div className="flex justify-center space-x-4 sm:space-x-8 mt-4 sm:mt-6 px-2">
-        <StatCard label="Books Read" value={userStats.booksRead} />
-        <StatCard label="Following" value={userStats.following} />
-        <StatCard label="Friends" value={userStats.friends} />
+        <StatCard label="Books Read" value={userData.booksReadCount} />
+        <StatCard label="Following" value={userData.followingCount} />
+        <StatCard label="Friends" value={userData.friendsCount} />
       </div>
 
       {/* Navigation Tabs */}
@@ -62,11 +150,11 @@ const ProfilePage = () => {
         <div className="flex px-4 sm:px-8 min-w-max">
           {[
             { name: 'PROFILE', count: null },
-            { name: 'BOOKS', count: userStats.booksRead },
-            { name: 'FOLLOWING', count: userStats.following },
-            { name: 'FRIENDS', count: userStats.friends },
-            { name: 'GROUPS', count: userStats.groups.length },
-            { name: 'REVIEWS', count: null }
+            { name: 'BOOKS', count: userData.booksReadCount},
+            { name: 'FOLLOWING', count: userData.followingCount },
+            { name: 'FRIENDS', count: userData.friendsCount },
+            { name: 'GROUPS', count: userData.groups.length },
+            { name: 'REVIEWS', count: userData.booksRead?.length }
           ].map(({ name, count }) => (
             <TabButton 
               key={name}
@@ -86,14 +174,14 @@ const ProfilePage = () => {
             {/* Reading Stats Section */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               {/* Reading Challenge */}
-              <ReadingChallengeCard stats={userStats.yearlyChallenge} lastYear={userStats.lastYearBooks} />
+              <ReadingChallengeCard stats={userData.yearlyChallenge} lastYear={userData.lastYearBooks} />
               
               {/* Top Genres */}
-              <GenresCard genres={userStats.genres} totalBooks={userStats.booksRead} />
+              <GenresCard genres={userData.genres} totalBooks={userData.booksReadCount} />
             </div>
 
             {/* Groups Section */}
-            <GroupsSection groups={userStats.groups} />
+            <GroupsSection groups={userData.groups} />
           </div>
         )}
       </div>
@@ -128,26 +216,13 @@ const TabButton = ({ name, count, isActive, onClick }) => (
 const ReadingChallengeCard = ({ stats, lastYear }) => (
   <div className="bg-white rounded-lg shadow p-4 sm:p-6">
     <div className="flex items-center mb-4">
-      <Target className="text-emerald-600 mr-2 h-5 w-5 sm:h-6 sm:w-6" />
-      <h2 className="text-lg sm:text-xl font-bold">2024 Reading Challenge</h2>
+      <Target className="text-emerald-600 mr-2 h-5 w-5" />
+      <h2 className="text-lg font-semibold">Reading Challenge</h2>
     </div>
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-2xl sm:text-3xl font-bold text-emerald-600">
-          {stats.current} / {stats.goal}
-        </p>
-        <p className="text-sm sm:text-base text-gray-600">books read</p>
-      </div>
-      <div className="text-right">
-        <p className="text-sm sm:text-base text-gray-600">Last year:</p>
-        <p className="font-bold">{lastYear} books</p>
-      </div>
-    </div>
-    <div className="w-full bg-gray-200 rounded-full h-2.5 mt-4">
-      <div 
-        className="bg-emerald-600 h-2.5 rounded-full"
-        style={{ width: `${(stats.current / stats.goal) * 100}%` }}
-      ></div>
+    <div>
+      <div className="font-bold text-xl">{stats.current} / {stats.goal}</div>
+      <div className="text-gray-600">Books Read this Year</div>
+      <div className="text-gray-600">Last Year: {lastYear} Books</div>
     </div>
   </div>
 );
@@ -155,51 +230,33 @@ const ReadingChallengeCard = ({ stats, lastYear }) => (
 const GenresCard = ({ genres, totalBooks }) => (
   <div className="bg-white rounded-lg shadow p-4 sm:p-6">
     <div className="flex items-center mb-4">
-      <BookOpen className="text-emerald-600 mr-2 h-5 w-5 sm:h-6 sm:w-6" />
-      <h2 className="text-lg sm:text-xl font-bold">Top Genres</h2>
+      <BookOpen className="text-emerald-600 mr-2 h-5 w-5" />
+      <h2 className="text-lg font-semibold">Top Genres</h2>
     </div>
-    <div className="space-y-3">
+    <ul>
       {genres.map(genre => (
-        <div key={genre.name} className="flex justify-between items-center">
-          <span className="text-sm sm:text-base text-gray-700">{genre.name}</span>
-          <div className="flex items-center">
-            <span className="text-xs sm:text-sm text-gray-500 mr-2">
-              {genre.count} books
-            </span>
-            <div className="w-16 sm:w-24 bg-gray-200 rounded-full h-2">
-              <div 
-                className="bg-emerald-600 h-2 rounded-full"
-                style={{ width: `${(genre.count / totalBooks) * 100}%` }}
-              ></div>
-            </div>
-          </div>
-        </div>
+        <li key={genre.name} className="flex justify-between">
+          <span>{genre.name}</span>
+          <span>{genre.count} ({((genre.count / totalBooks) * 100).toFixed(0)}%)</span>
+        </li>
       ))}
-    </div>
+    </ul>
   </div>
 );
 
 const GroupsSection = ({ groups }) => (
   <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-    <div className="flex items-center justify-between mb-4">
-      <div className="flex items-center">
-        <Users className="text-emerald-600 mr-2 h-5 w-5 sm:h-6 sm:w-6" />
-        <h2 className="text-lg sm:text-xl font-bold">Groups</h2>
-      </div>
-      <button className="text-sm sm:text-base text-emerald-600 hover:text-emerald-700">
-        View All
-      </button>
+    <div className="flex items-center mb-4">
+      <Users className="text-emerald-600 mr-2 h-5 w-5" />
+      <h2 className="text-lg font-semibold">Groups</h2>
     </div>
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-      {groups.map(group => (
-        <div key={group.name} className="border rounded-lg p-3 sm:p-4">
-          <h3 className="font-semibold text-sm sm:text-base">{group.name}</h3>
-          <p className="text-xs sm:text-sm text-gray-500">
-            {group.members.toLocaleString()} members
-          </p>
-        </div>
-      ))}
-    </div>
+    <ul>
+      {groups.length === 0 ? (
+        <li>No groups found.</li>
+      ) : (
+        groups.map(group => <li key={group.id}>{group.name}</li>)
+      )}
+    </ul>
   </div>
 );
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, ShoppingCart } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useCart } from './CartContext';
+import { useCart } from '../../contexts/CartContext';
 
 const CartItem = ({ item, onRemove, isRemoving }) => (
   <div className="flex items-center gap-3 relative group">

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ShoppingCart, Heart, X } from 'lucide-react';
 import apiService from '../services/api';
-import { useCart } from './Cartpage/CartContext';
+import { useCart } from '../contexts/CartContext';
 
 const categories = ['All', 'Fiction', 'Romance', 'Dystopian', 'Fantasy', 'Historical Fiction', 'Adventure'];
 

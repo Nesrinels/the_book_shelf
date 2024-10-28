@@ -1,22 +1,40 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 const ProtectedRoute = ({ children, isAdminRoute }) => {
-  const token = localStorage.getItem('token');
-  
-  if (!token) {
-    return <Navigate to="/signin" replace />;
-  }
-  
-  // Parse the token to check if the user is an admin
-  const decodedToken = JSON.parse(atob(token.split('.')[1]));
+  const { isAuthenticated, isLoading, user } = useAuth();
+  const location = useLocation();
 
-  // If it's an admin route and the user is not an admin, redirect to home
-  if (isAdminRoute && decodedToken.role !== 'admin') {
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      </div>
+    );
+  }
+
+  // Redirect to signin if not authenticated
+  if (!isAuthenticated) {
+    return <Navigate to="/signin" state={{ from: location }} replace />;
+  }
+
+  // Check for admin access if it's an admin route
+  if (isAdminRoute && user?.role !== 'admin') {
     return <Navigate to="/" replace />;
   }
 
-  // Otherwise, render the component
+  // Render the protected component
   return children;
 };
+
+// Example usage of different protection levels
+export const AdminRoute = ({ children }) => (
+  <ProtectedRoute isAdminRoute>{children}</ProtectedRoute>
+);
+
+export const UserRoute = ({ children }) => (
+  <ProtectedRoute>{children}</ProtectedRoute>
+);
 
 export default ProtectedRoute;

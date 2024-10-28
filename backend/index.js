@@ -28,22 +28,11 @@ mongoose
     process.exit(1);
   });
 
-// Mount the book routes under /api/books
+// API Routes
 app.use('/api/books', bookRoutes);
-
-// Mount the auth routes under /api/auth
 app.use('/api/auth', authRoutes); 
-
-// Serve static files from the "images" folder
-app.use('/images', express.static(path.join(__dirname, 'images')));
-
 app.use('/api/reviews', reviewRoutes);
-
 app.use('/api/cart', cartRoutes);
-
-
-
-
 
 
 // Development vs Production setup
