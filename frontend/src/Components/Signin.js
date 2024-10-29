@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Mail, Lock, EyeOff, Eye } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext'; // Adjust the import path as needed
 
 export default function SignInPage() {
+  const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -20,7 +21,6 @@ export default function SignInPage() {
       ...prev,
       [name]: value,
     }));
-    // Clear error when user starts typing
     if (error) setError('');
   };
 
@@ -37,7 +37,7 @@ export default function SignInPage() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault(); // Prevent form submission from refreshing the page
+    e.preventDefault();
     
     if (!validateForm()) return;
 
@@ -45,36 +45,15 @@ export default function SignInPage() {
     setError('');
 
     try {
-      const response = await axios.post(
-        'http://localhost:3000/api/auth/login',
-        formData,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      const { token } = response.data;
+      const response = await login(formData);
       
-      if (!token) {
-        throw new Error('No token received from server');
-      }
-
-      // Store token securely
-      localStorage.setItem('authToken', token);
-
-      // Decode token and handle routing
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
+      if (response.token) {
+        // Navigation will be handled by the AuthContext after successful login
+        // But you can still handle specific routing based on role if needed
+        const payload = JSON.parse(atob(response.token.split('.')[1]));
         const destination = payload.role === 'admin' ? '/admin-dashboard' : '/';
         navigate(destination, { replace: true });
-      } catch (err) {
-        console.error('Token parsing error:', err);
-        setError('Authentication failed. Please try again.');
-        localStorage.removeItem('authToken');
       }
-
     } catch (err) {
       console.error('Login error:', err);
       

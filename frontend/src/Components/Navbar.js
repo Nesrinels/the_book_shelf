@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, Bell, Menu, X, Heart, User } from 'lucide-react';
 import logo from './logo/logo2.png';
-import Cart from './Cartpage/Cart';
+import {Cart} from './Cartpage/Cart';
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);

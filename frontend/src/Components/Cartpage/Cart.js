@@ -1,9 +1,75 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { X, ShoppingCart } from 'lucide-react';
+// Cart.js
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { X, ShoppingCart, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../../contexts/CartContext';
 
-const CartItem = ({ item, onRemove, isRemoving }) => (
+const CartButton = ({ book }) => {
+  const { addItem, error: cartError, loading, clearError } = useCart();
+  const [showError, setShowError] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const isLoggedIn = !!localStorage.getItem('authToken');
+
+  useEffect(() => {
+    let timer;
+    if (showError) {
+      timer = setTimeout(() => {
+        setShowError(false);
+        clearError?.();
+      }, 3000);
+    }
+    return () => clearTimeout(timer);
+  }, [showError, clearError]);
+
+  const handleAddToCart = async () => {
+    if (!isLoggedIn) {
+      setShowError(true);
+      return;
+    }
+
+    if (!book?._id) {
+      setShowError(true);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      await addItem(book);
+      setShowError(false);
+    } catch (err) {
+      setShowError(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="relative">
+      <button
+        onClick={handleAddToCart}
+        disabled={isLoading || loading}
+        className="w-full bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700 transition-colors disabled:bg-emerald-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+      >
+        {(isLoading || loading) ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <ShoppingCart className="h-4 w-4" />
+        )}
+        Add to Cart
+      </button>
+      {showError && (
+        <div className="absolute top-full left-0 right-0 mt-2 p-2 bg-red-100 text-red-600 text-sm rounded-md">
+          {!isLoggedIn 
+            ? 'Please sign in to add items to cart'
+            : cartError || 'Failed to add item to cart'
+          }
+        </div>
+      )}
+    </div>
+  );
+};
+
+const CartItem = React.memo(({ item, onRemove, isRemoving }) => (
   <div className="flex items-center gap-3 relative group">
     <div className="w-16 h-20 overflow-hidden rounded bg-gray-100">
       <img 
@@ -20,9 +86,12 @@ const CartItem = ({ item, onRemove, isRemoving }) => (
       <h3 className="text-sm font-medium text-gray-800 truncate">
         {item.title}
       </h3>
-      <p className="text-sm text-gray-600 truncate">By {item.author}</p>
+      <p className="text-sm text-gray-600 truncate">
+        By {item.author}
+      </p>
       <p className="text-emerald-600 font-medium">
-        ${Number(item.price).toFixed(2)}
+        ${parseFloat(item.price).toFixed(2)}
+        {item.quantity > 1 && ` × ${item.quantity}`}
       </p>
     </div>
     <button 
@@ -42,22 +111,29 @@ const CartItem = ({ item, onRemove, isRemoving }) => (
       )}
     </button>
   </div>
-);
+));
 
-const Notification = ({ type, message, onClose }) => {
+CartItem.displayName = 'CartItem';
+
+const Notification = React.memo(({ type, message, onClose }) => {
   useEffect(() => {
     const timer = setTimeout(onClose, 3000);
     return () => clearTimeout(timer);
   }, [onClose]);
 
   return (
-    <div className={`fixed top-4 right-4 p-4 rounded-md shadow-lg ${
-      type === 'error' ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white'
-    }`}>
+    <div 
+      role="alert"
+      className={`fixed top-4 right-4 p-4 rounded-md shadow-lg ${
+        type === 'error' ? 'bg-red-500' : 'bg-emerald-500'
+      } text-white`}
+    >
       {message}
     </div>
   );
-};
+});
+
+Notification.displayName = 'Notification';
 
 const Cart = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -70,6 +146,7 @@ const Cart = () => {
     loading,
     error,
     total = 0,
+    cartCount = 0,
     fetchCartItems,
     removeItem,
     checkout
@@ -89,14 +166,16 @@ const Cart = () => {
   }, [isOpen]);
 
   useEffect(() => {
-    fetchCartItems().catch(() => {
-      showNotification('error', 'Failed to load cart items');
-    });
-  }, [fetchCartItems]);
+    if (isOpen) {
+      fetchCartItems().catch(() => {
+        showNotification('error', 'Failed to load cart items');
+      });
+    }
+  }, [isOpen, fetchCartItems]);
 
-  const showNotification = (type, message) => {
+  const showNotification = useCallback((type, message) => {
     setNotification({ type, message });
-  };
+  }, []);
 
   const handleRemoveItem = async (itemId) => {
     if (!itemId) return;
@@ -105,7 +184,6 @@ const Cart = () => {
       setIsRemoving(itemId);
       await removeItem(itemId);
       showNotification('success', 'Item removed from cart');
-      await fetchCartItems();
     } catch (error) {
       showNotification('error', 'Failed to remove item');
     } finally {
@@ -131,9 +209,9 @@ const Cart = () => {
         aria-label="Shopping cart"
       >
         <ShoppingCart className="h-6 w-6" />
-        {cartItems.length > 0 && (
+        {cartCount > 0 && (
           <span className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center text-xs text-white bg-red-500 rounded-full">
-            {cartItems.length}
+            {cartCount}
           </span>
         )}
       </button>
@@ -155,11 +233,11 @@ const Cart = () => {
               </div>
             )}
 
-            {error && (
+            {error && !loading && (
               <div className="bg-red-50 text-red-500 p-3 rounded-md text-sm">
                 {error}
                 <button 
-                  onClick={fetchCartItems}
+                  onClick={() => fetchCartItems()}
                   className="block w-full mt-2 text-center text-red-600 hover:text-red-700 text-xs"
                 >
                   Try again
@@ -220,4 +298,4 @@ const Cart = () => {
   );
 };
 
-export default Cart;
+export { Cart, CartButton };

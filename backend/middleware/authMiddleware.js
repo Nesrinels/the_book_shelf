@@ -59,7 +59,9 @@ const authMiddleware = async (req, res, next) => {
     }
 
     // 4. Fetch and validate user from database
-    const user = await User.findById(decoded.userId);
+    const user = await User.findById(decoded.userId)
+      .select('+cart')
+      .lean();
     
     if (!user) {
       console.log('[Auth] User not found:', decoded.userId);
@@ -70,19 +72,30 @@ const authMiddleware = async (req, res, next) => {
       });
     }
 
-    // 5. Check if user account is active
-    if (!user.isActive) {
-      console.log('[Auth] Inactive user attempted access:', decoded.userId);
-      return res.status(403).json({
-        status: 'error',
-        message: 'Account is inactive',
-        code: 'INACTIVE_ACCOUNT'
+    // 5. Special handling for cart endpoints
+    if (req.path.includes('/api/cart')) {
+      if (!user.cart) {
+        user.cart = []; // Initialize cart if it doesn't exist
+      }
+      console.log('[Auth] Cart access:', {
+        userId: user._id,
+        cartItems: user.cart.length,
+        endpoint: req.path
       });
     }
 
     // 6. Attach user and token to request object
     req.user = user;
     req.token = token;
+
+    // Add response success helper
+    req.sendSuccess = (data) => {
+      return res.status(200).json({
+        status: 'success',
+        data,
+        code: 'SUCCESS'
+      });
+    };
 
     // 7. Proceed to the next middleware or route handler
     next();
