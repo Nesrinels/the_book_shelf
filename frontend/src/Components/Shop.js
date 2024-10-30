@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ShoppingCart, Heart, X } from 'lucide-react';
 import apiService from '../services/api';
 import { useCart } from '../contexts/CartContext';
+import {Link} from 'react-router-dom';
 
 const categories = ['All', 'Fiction', 'Romance', 'Dystopian', 'Fantasy', 'Historical Fiction', 'Adventure'];
 
@@ -51,6 +52,7 @@ const BookCard = ({ book, setNotification }) => {
   };
 
   return (
+    <Link to={`/books/${book._id}`} className="block bg-white rounded-lg overflow-hidden shadow-md transition-all duration-300 hover:shadow-xl" >
     <div className="bg-white rounded-lg overflow-hidden shadow-md transition-all duration-300 hover:shadow-xl">
       <div className="relative aspect-[3/4]">
         <img
@@ -88,6 +90,7 @@ const BookCard = ({ book, setNotification }) => {
         </div>
       </div>
     </div>
+    </Link>
   );
 };
 

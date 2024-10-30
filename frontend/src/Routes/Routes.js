@@ -20,7 +20,7 @@ const AppRoutes = () => {
       <Route path="/forgetpassword" element={<ForgetPassword />} />
       <Route path="/changepassword" element={<ChangePassword />} />
       <Route path="/profile" element={<Profile />} />
-      <Route path="/book/:id" element={<Book />} />
+      <Route path="/books/:id" element={<Book />} />
       <Route path="/cart" element={<CartPage />} />
 
       {/* Protected Route for Shop */}

@@ -30,7 +30,7 @@ router.get('/genre/:genre', async (req, res) => {
 });
 
 // GET a single book by ID
-router.get('/id/:id', async (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     const book = await Book.findById(req.params.id);
     if (!book) {
