@@ -10,7 +10,7 @@ class ApiService {
             },
             timeout: 10000,
         });
-
+    
         // Initialize request interceptor
         this.client.interceptors.request.use(
             (config) => {
@@ -23,18 +23,18 @@ class ApiService {
             (error) => Promise.reject(this.handleError(error))
         );
 
-        // Initialize response interceptor
-        this.client.interceptors.response.use(
-            (response) => response.data,
-            async (error) => {
-                if (error.response?.status === 401) {
-                    this.clearAuth();
-                    window.location.replace('/signin');
-                    return Promise.reject(this.handleError(error));
-                }
-                return Promise.reject(this.handleError(error));
-            }
-        );
+        // // Initialize response interceptor
+        // this.client.interceptors.response.use(
+        //     (response) => response.data,
+        //     async (error) => {
+        //         if (error.response?.status === 401) {
+        //             this.clearAuth();
+        //             window.location.replace('/signin');
+        //             return Promise.reject(this.handleError(error));
+        //         }
+        //         return Promise.reject(this.handleError(error));
+        //     }
+        // );
     }
 
     clearAuth() {
@@ -84,6 +84,7 @@ class ApiService {
     async login(credentials) {
         try {
             const response = await this.client.post('/auth/login', credentials);
+            console.log(credentials);
             if (response.token) {
                 const { token, user } = response;
                 this.setAuth(token, user?.id, user?.role);
@@ -108,12 +109,13 @@ class ApiService {
     }
 
     // Cart endpoints with authentication check
-    async addToCart(bookId, quantity = 1) {
+    async addToCart(book ) {
         try {
             if (!this.isAuthenticated()) {
                 throw new Error('Please sign in to add items to cart');
             }
-            return await this.client.post('/cart/add', { bookId, quantity });
+            const userId = localStorage.getItem('userId');
+            return await this.client.post('/cart/add', { book, userId});
         } catch (error) {
             throw this.handleError(error);
         }
@@ -185,6 +187,13 @@ class ApiService {
         }
     }
 
+    async getReviewsByBookId(bookId) {
+        try {
+            return await this.client.get(`/books/${bookId}/reviews`);
+        } catch (error) {
+            throw this.handleError(error);
+        }
+    }
     // Auth status checks
     isAuthenticated() {
         return !!localStorage.getItem('authToken');

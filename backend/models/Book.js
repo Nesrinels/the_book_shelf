@@ -73,4 +73,6 @@ bookSchema.virtual('fullImageUrl').get(function() {
 bookSchema.set('toJSON', { virtuals: true });
 bookSchema.set('toObject', { virtuals: true });
 
-module.exports = mongoose.models.Book || mongoose.model('Book', bookSchema);
+const Book = mongoose.model('Book', bookSchema);
+
+module.exports = Book;

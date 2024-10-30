@@ -7,22 +7,24 @@ const auth = require('../middleware/authMiddleware');
 // Add item to cart
 router.post('/add', auth, async (req, res) => {
     try {
-        const { bookId } = req.body;
         
-        if (!req.user || !req.user.id) {
-            return res.status(401).json({ message: 'User not authenticated' });
-        }
+        const  {bookId} = req.body.book;
+        
+        
+        // if (!req.user || !req.user.id) {
+        //     return res.status(401).json({ message: 'User not authenticated' });
+        // }
 
         const book = await Book.findById(bookId);
         if (!book) {
             return res.status(404).json({ message: 'Book not found' });
         }
 
-        let cart = await Cart.findOne({ user: req.user.id });
+        let cart = await Cart.findOne({ user: req.user._id });
         
         if (!cart) {
             cart = new Cart({
-                user: req.user.id,
+                user: req.user._id,
                 items: [],
                 totalAmount: 0
             });
@@ -63,13 +65,13 @@ router.post('/add', auth, async (req, res) => {
 });
 
 // Get cart
-router.get('/', auth, async (req, res) => {
+router.get('/', async (req, res) => {
     try {
-        if (!req.user || !req.user.id) {
-            return res.status(401).json({ message: 'User not authenticated' });
-        }
-
-        const cart = await Cart.findOne({ user: req.user.id })
+        // if (!req.user || !req.user.id) {
+        //     return res.status(401).json({ message: 'User not authenticated' });
+        // }
+        console.log(req);
+        const cart = await Cart.findOne({ user: req.user._id })
             .populate('items.book', 'title author price imageUrl');
         
         if (!cart) {

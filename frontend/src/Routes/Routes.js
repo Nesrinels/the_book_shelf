@@ -26,7 +26,7 @@ const AppRoutes = () => {
       {/* Protected Route for Shop */}
       <Route
         path="/shop"
-        element={<Shop />
+         element={ <Shop />
         }
       />
 

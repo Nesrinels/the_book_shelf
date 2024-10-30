@@ -128,7 +128,7 @@ const ShopPage = () => {
     const fetchBooks = async () => {
       try {
         const data = await apiService.getAllBooks();
-        setBooks(data);
+        setBooks(data.data);
       } catch (error) {
         setError(error?.message || 'Failed to load books.');
       } finally {

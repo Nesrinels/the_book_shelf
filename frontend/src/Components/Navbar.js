@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Search, Bell, Menu, X, Heart, User } from 'lucide-react';
 import logo from './logo/logo2.png';
 import {Cart} from './Cartpage/Cart';
+import {useAuth} from '../contexts/AuthContext';
+
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -10,12 +12,17 @@ export default function Navbar() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [userRole, setUserRole] = useState('');
   const navigate = useNavigate();
+  const {isAuthenticated, setIsAuthenticated} = useAuth();
+
   
 
   useEffect(() => {
+    console.log('navbar')
     const checkLoginStatus = () => {
+      console.log('test');
       const token = localStorage.getItem('authToken');
       const loggedIn = !!token;
+      console.log(token);
       setIsLoggedIn(loggedIn);
       if (loggedIn) {
         // Decode the token to get the user role
@@ -37,7 +44,7 @@ export default function Navbar() {
     return () => {
       window.removeEventListener('storage', checkLoginStatus);
     };
-  }, []);
+  }, [isAuthenticated]);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -53,6 +60,7 @@ export default function Navbar() {
     setShowDropdown(false);
     setUserRole('');
     navigate('/');
+    setIsAuthenticated(false);
   };
 
   return (
@@ -108,7 +116,7 @@ export default function Navbar() {
               </button>
               <Cart />
 
-              {isLoggedIn ? (
+              {isAuthenticated? (
                 <div className="relative">
                   <button onClick={toggleDropdown} className="relative p-2 text-gray-600 hover:text-gray-900">
                     <User className="h-6 w-6" />

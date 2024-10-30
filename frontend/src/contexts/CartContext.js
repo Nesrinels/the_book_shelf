@@ -108,8 +108,9 @@ export const CartProvider = ({ children }) => {
         quantity: 1,
         price: parseFloat(item.price)
       });
+      console.log(response);
 
-      if (response?.data?.status === 'success') {
+      if (response?.status === 200) {
         setCartItems(prev => {
           const existingItemIndex = prev.findIndex(cartItem => cartItem._id === item._id);
           

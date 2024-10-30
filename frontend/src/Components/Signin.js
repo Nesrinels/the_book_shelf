@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Mail, Lock, EyeOff, Eye } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext'; // Adjust the import path as needed
+import {  useAuth} from '../contexts/AuthContext'; // Adjust the import path as needed
 
 export default function SignInPage() {
   const { login } = useAuth();
@@ -44,16 +44,21 @@ export default function SignInPage() {
     setIsLoading(true);
     setError('');
 
+    console.log(formData);
+
     try {
       const response = await login(formData);
+  
       
-      if (response.token) {
-        // Navigation will be handled by the AuthContext after successful login
-        // But you can still handle specific routing based on role if needed
-        const payload = JSON.parse(atob(response.token.split('.')[1]));
-        const destination = payload.role === 'admin' ? '/admin-dashboard' : '/';
-        navigate(destination, { replace: true });
-      }
+      // if (response.token) {
+      //   // Navigation will be handled by the AuthContext after successful login
+      //   // But you can still handle specific routing based on role if needed
+      //   const payload = JSON.parse(atob(response.token.split('.')[1]));
+      //   console.log(payload);
+      //   const destination = payload.role === 'admin' ? '/admin-dashboard' : '/';
+      //   navigate(destination, { replace: true });
+      // }
+      navigate('/')
     } catch (err) {
       console.error('Login error:', err);
       

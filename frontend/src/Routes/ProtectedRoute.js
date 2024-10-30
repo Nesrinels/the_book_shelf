@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 const ProtectedRoute = ({ children, isAdminRoute }) => {
   const { isAuthenticated, isLoading, user } = useAuth();
   const location = useLocation();
+  console.log(isAuthenticated);
 
   // Show loading state while checking authentication
   if (isLoading) {

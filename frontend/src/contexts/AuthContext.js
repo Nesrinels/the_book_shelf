@@ -8,44 +8,44 @@ export const AuthProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState(null);
 
-  useEffect(() => {
-    const initAuth = () => {
-      const token = localStorage.getItem('token');
+  // useEffect(() => {
+  //   const initAuth = () => {
+  //     const token = localStorage.getItem('authToken');
 
-      if (token) {
-        try {
-          // Parse and validate the token
-          const decodedToken = JSON.parse(atob(token.split('.')[1]));
-          const tokenExpiry = decodedToken.exp * 1000; // Convert to milliseconds
+  //     if (token) {
+  //       try {
+  //         // Parse and validate the token
+  //         const decodedToken = JSON.parse(atob(token.split('.')[1]));
+  //         const tokenExpiry = decodedToken.exp * 1000; // Convert to milliseconds
 
-          if (tokenExpiry > Date.now()) {
-            setIsAuthenticated(true);
-            setUser({
-              id: decodedToken.id,
-              role: decodedToken.role,
-              // Add any other user data from token as needed
-            });
-          } else {
-            // Token expired, clean up
-            handleLogout();
-          }
-        } catch (error) {
-          console.error('Token parsing error:', error);
-          handleLogout();
-        }
-      } else {
-        // No token found
-        setIsAuthenticated(false);
-      }
+  //         if (tokenExpiry > Date.now()) {
+  //           setIsAuthenticated(true);
+  //           setUser({
+  //             id: decodedToken.id,
+  //             role: decodedToken.role,
+  //             // Add any other user data from token as needed
+  //           });
+  //         } else {
+  //           // Token expired, clean up
+  //           handleLogout();
+  //         }
+  //       } catch (error) {
+  //         console.error('Token parsing error:', error);
+  //         handleLogout();
+  //       }
+  //     } else {
+  //       // No token found
+  //       setIsAuthenticated(false);
+  //     }
 
-      setIsLoading(false);
-    };
+  //     setIsLoading(false);
+  //   };
 
-    initAuth();
-  }, []);
+  //   initAuth();
+  // }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    localStorage.removeItem('authToken');
     setIsAuthenticated(false);
     setUser(null);
   };
@@ -53,9 +53,10 @@ export const AuthProvider = ({ children }) => {
   const login = async (credentials) => {
     try {
       const response = await apiService.login(credentials);
-      if (response.token) {
-        localStorage.setItem('token', response.token);
-        const decodedToken = JSON.parse(atob(response.token.split('.')[1]));
+      console.log(response);
+      if (response.data.token) {
+        localStorage.setItem('authToken', response.data.token);
+        const decodedToken = JSON.parse(atob(response.data.token.split('.')[1]));
         setIsAuthenticated(true);
         setUser({
           id: decodedToken.id,
@@ -79,6 +80,7 @@ export const AuthProvider = ({ children }) => {
     <AuthContext.Provider 
       value={{
         isAuthenticated,
+        setIsAuthenticated,
         isLoading,
         user,
         login,

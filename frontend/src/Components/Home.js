@@ -5,6 +5,7 @@ import Recommendations from './homepage/Recommendations.js';
 import Feature from './homepage/Feature.js';
 import Reviews from './homepage/Reviews.js';
 import Footer from './Footer.js';
+import apiService from '../services/api.js';
 
 
 // BookCarousel component (unchanged)
@@ -72,12 +73,12 @@ function Home() {
     try {
       setIsLoading(true);
       
-      const response = await fetch('http://localhost:3000/api/books');
-      if (!response.ok) {
-        throw new Error('Failed to fetch books');
-      }
-      const data = await response.json();
-      setBooks(data);
+      const response = await apiService.getAllBooks({});
+      console.log(response);
+      // 
+      
+      // const data =  await response.data;
+      setBooks(response.data);
       setIsLoading(false);
     } catch (error) {
       setError(error.message);
