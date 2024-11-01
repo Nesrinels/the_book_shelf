@@ -189,11 +189,20 @@ class ApiService {
 
     async getReviewsByBookId(bookId) {
         try {
-            return await this.client.get(`/books/${bookId}/reviews`);
+            return await this.client.get(`/reviews`);
         } catch (error) {
             throw this.handleError(error);
         }
     }
+
+    async getProfile(){
+        try {
+            const userId = localStorage.getItem('userId');
+            return await this.client.get(`/users`);
+        } catch (error) {
+            throw this.handleError(error);
+        }
+    } 
     // Auth status checks
     isAuthenticated() {
         return !!localStorage.getItem('authToken');

@@ -99,8 +99,6 @@ export default function Navbar() {
             {/* Desktop Navigation Links */}
             <div className="hidden md:flex items-center space-x-8 mr-4">
               <Link to="/shop" className="text-gray-600 hover:text-gray-900 transition-colors">Shop</Link>
-              <Link to="/blog" className="text-gray-600 hover:text-gray-900 transition-colors">Blog</Link>
-              <Link to="/contact" className="text-gray-600 hover:text-gray-900 transition-colors">Contact</Link>
               <Link to="/about" className="text-gray-600 hover:text-gray-900 transition-colors">About Us</Link>
             </div>
 
@@ -163,8 +161,6 @@ export default function Navbar() {
               </div>
             </div>
             <Link to="/shop" className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-gray-900 transition-colors">Shop</Link>
-            <Link to="/blog" className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-gray-900 transition-colors">Blog</Link>
-            <Link to="/contact" className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-gray-900 transition-colors">Contact</Link>
             <Link to="/about" className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-gray-900 transition-colors">About Us</Link>
           </div>
         </div>

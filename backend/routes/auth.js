@@ -130,8 +130,26 @@ router.post('/login', async (req, res) => {
 });
 
 // Profile routes - now userController is defined before these routes
-router.get('/users/:userId', authMiddleware, userController.getProfile);
-router.put('/users/:userId', authMiddleware, userController.updateProfile);
+router.get('/users', async (req, res) => {
+  try {
+    const users = await User.find({});
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+})
+router.get('/users/:id', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+router.put('/users/:id', authMiddleware, userController.updateProfile);
 
 
 router.get('/:id', authMiddleware, async (req, res) => {

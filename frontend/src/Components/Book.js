@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import apiService from '../services/api';
 import { Star, ShoppingCart, Heart} from 'lucide-react';
+import { useCart } from '../contexts/CartContext';
 
 export default function BookProductPage() {
   const { id } = useParams(); // Get the book ID from the URL
@@ -9,6 +10,40 @@ export default function BookProductPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [reviews, setReviews] = useState([]);
+  const [addingToCart, setAddingToCart] = useState(false);
+  const { addItem } = useCart();
+  const [notification, setNotification] = useState(null);
+
+
+  const handleAddToCart = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (addingToCart) return;
+
+    setAddingToCart(true);
+    try {
+      await addItem({
+        _id: book._id,
+        title: book.title,
+        author: book.author,
+        price: book.price,
+        imageUrl: book.fullImageUrl,
+      });
+
+      setNotification({
+        message: 'Successfully added to cart!',
+        type: 'success'
+      });
+    } catch (error) {
+      setNotification({
+        message: error?.message || 'Failed to add to cart. Please try again later.',
+        type: 'error'
+      });
+    } finally {
+      setAddingToCart(false);
+    }
+  };
 
   // Fetch the book details based on the ID
   useEffect(() => {
@@ -16,7 +51,7 @@ export default function BookProductPage() {
       try {
         const data = await apiService.getBookById(id); // Fetch the book data by ID
         console.log("Fetched book data:", data);
-        setBook(data);
+        setBook(data.data);
       } catch (err) {
         setError('Failed to fetch the book. Please try again later.');
       } finally {
@@ -27,7 +62,7 @@ export default function BookProductPage() {
     const fetchReviews = async () => {
       try {
         const reviewData = await apiService.getReviewsByBookId(id);
-        setReviews(reviewData);
+        setReviews(reviewData.data);
       } catch (error) {
         console.error('Failed to fetch reviews:', error);
       }
@@ -50,13 +85,14 @@ export default function BookProductPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 mt-16">
+    <div className="container mx-auto px-4 py-8 mt-14">
       <div className="flex flex-col lg:flex-row">
         <div className="w-full lg:w-1/2">
           <img
             src={book.fullImageUrl}
             alt={`Cover of ${book.title}`}
-            className="max-w-screen-md h-auto rounded-lg shadow-md"
+            style={{ width: '530px', height: 'auto' }}
+            className="rounded-lg shadow-md"
           />
         </div>
         <div className="w-full lg:w-1/2 lg:pl-8 mt-4 lg:mt-0">
@@ -64,7 +100,10 @@ export default function BookProductPage() {
           <p className="text-gray-700 text-lg mb-4">By {book.author}</p>
           <p className="text-gray-500 mb-4">{book.description}</p>
           <p className="text-2xl font-bold text-emerald-700 mb-6">${book.price}</p>
-          <button className="bg-emerald-700 text-white py-2 px-4 rounded-lg mr-2">
+          <button 
+          onClick={handleAddToCart}
+          disabled={addingToCart}
+          className="bg-emerald-700 text-white py-2 px-4 rounded-lg mr-2">
             <ShoppingCart size={18} className="inline-block mr-2" /> Add to Cart
           </button>
           <button className="bg-pink-600 text-white py-2 px-4 rounded-lg">
