@@ -198,7 +198,7 @@ class ApiService {
     async getProfile(){
         try {
             const userId = localStorage.getItem('userId');
-            return await this.client.get(`/users`);
+            return await this.client.get(`/users/${userId}`);
         } catch (error) {
             throw this.handleError(error);
         }

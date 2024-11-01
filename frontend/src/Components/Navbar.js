@@ -17,9 +17,7 @@ export default function Navbar() {
   
 
   useEffect(() => {
-    console.log('navbar')
     const checkLoginStatus = () => {
-      console.log('test');
       const token = localStorage.getItem('authToken');
       const loggedIn = !!token;
       console.log(token);

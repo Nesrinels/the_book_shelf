@@ -27,7 +27,7 @@ const ProfilePage = () => {
       }
 
       const data = response.data;
-      const transformedData = {
+      setUserData ({
         username: data.username,
         bio: data.bio,
         profilePicture: data.profilePicture || 'https://cdn-icons-png.flaticon.com/128/3177/3177440.png',
@@ -44,9 +44,7 @@ const ProfilePage = () => {
         lastYearBooks: data.lastYearBooks || 0,
         groups: data.groups || [],
         genres: calculateGenres(data.booksRead || [])
-      };
-
-      setUserData(transformedData);
+      });
       setLoading(false);
     } catch (error) {
       setError(error.message);
