@@ -5,7 +5,7 @@ import Signin from '../Components/Signin';
 import ForgetPassword from '../Components/ForgetPassword';
 import ChangePassword from '../Components/ChangePassword';
 import Shop from '../Components/Shop';
-import AdminDashboard from '../Components/AdminDashboard'; // Import admin dashboard
+import AdminDashboard from '../Components/Admin/AdminDashboard'; // Import admin dashboard
 import ProtectedRoute from './ProtectedRoute'; // Import the ProtectedRoute component
 import Profile from '../Components/Profile'; // Import the Profile component';
 import Book from '../Components/Book'; // Import the Book component;
