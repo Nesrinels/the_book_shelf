@@ -11,6 +11,7 @@ import Profile from '../Components/Profile';
 import Book from '../Components/Book'; 
 import CartPage from '../Components/Cartpage/CartPage'; 
 import Users from '../Components/Admin/UsersPage';
+import Books from '../Components/Admin/BooksPage';
 
 const AppRoutes = () => {
   return (
@@ -48,11 +49,11 @@ const AppRoutes = () => {
       </ProtectedRoute>
     }
   />
-        {/* <Route
-          path="books"
-          element={<AdminBooks />}
-        />
         <Route
+          path="books"
+          element={<Books />}
+        />
+        {/* <Route
           path="reports"
           element={<Reports />}
         />
