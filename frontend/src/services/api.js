@@ -203,6 +203,14 @@ class ApiService {
             throw this.handleError(error);
         }
     } 
+    async getAllUsers() {
+        try {
+            return await this.client.get('/auth/users');
+        } catch (error) {
+            throw this.handleError(error);
+        }
+    }
+    
     // Auth status checks
     isAuthenticated() {
         return !!localStorage.getItem('authToken');

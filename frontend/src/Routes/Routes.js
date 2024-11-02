@@ -31,25 +31,36 @@ const AppRoutes = () => {
         }
       />
 
-      {/* Protected Admin Route */}
-      <Route
-        path="/admin-dashboard"
-        element={
-          <ProtectedRoute isAdminRoute={true}>
-            <AdminDashboard />
-          </ProtectedRoute>
-        }
-      />
-       {/* Protected Admin Route for Users */}
-
-       <Route
-        path="/admin-dashboard/users"
-        element={
-          <ProtectedRoute isAdminRoute={true}>
-            <Users />
-          </ProtectedRoute>
-        }
-      />
+<Route
+  path="/admin-dashboard"
+  element={
+    <ProtectedRoute isAdminRoute={true}>
+      <AdminDashboard />
+    </ProtectedRoute>
+  }
+>
+  {/* Nested Admin Routes */}
+  <Route
+    path="users"
+    element={
+      <ProtectedRoute isAdminRoute={true}>
+        <Users />
+      </ProtectedRoute>
+    }
+  />
+        {/* <Route
+          path="books"
+          element={<AdminBooks />}
+        />
+        <Route
+          path="reports"
+          element={<Reports />}
+        />
+        <Route
+          path="settings"
+          element={<Settings />}
+        /> */}
+      </Route>
     </Routes>
   );
 };
