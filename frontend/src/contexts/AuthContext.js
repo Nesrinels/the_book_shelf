@@ -8,41 +8,41 @@ export const AuthProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState(null);
 
-  // useEffect(() => {
-  //   const initAuth = () => {
-  //     const token = localStorage.getItem('authToken');
+  useEffect(() => {
+    const initAuth = () => {
+      const token = localStorage.getItem('authToken');
 
-  //     if (token) {
-  //       try {
-  //         // Parse and validate the token
-  //         const decodedToken = JSON.parse(atob(token.split('.')[1]));
-  //         const tokenExpiry = decodedToken.exp * 1000; // Convert to milliseconds
+      if (token) {
+        try {
+          // Parse and validate the token
+          const decodedToken = JSON.parse(atob(token.split('.')[1]));
+          const tokenExpiry = decodedToken.exp * 1000; // Convert to milliseconds
 
-  //         if (tokenExpiry > Date.now()) {
-  //           setIsAuthenticated(true);
-  //           setUser({
-  //             id: decodedToken.id,
-  //             role: decodedToken.role,
-  //             // Add any other user data from token as needed
-  //           });
-  //         } else {
-  //           // Token expired, clean up
-  //           handleLogout();
-  //         }
-  //       } catch (error) {
-  //         console.error('Token parsing error:', error);
-  //         handleLogout();
-  //       }
-  //     } else {
-  //       // No token found
-  //       setIsAuthenticated(false);
-  //     }
+          if (tokenExpiry > Date.now()) {
+            setIsAuthenticated(true);
+            setUser({
+              id: decodedToken.id,
+              role: decodedToken.role,
+              // Add any other user data from token as needed
+            });
+          } else {
+            // Token expired, clean up
+            handleLogout();
+          }
+        } catch (error) {
+          console.error('Token parsing error:', error);
+          handleLogout();
+        }
+      } else {
+        // No token found
+        setIsAuthenticated(false);
+      }
 
-  //     setIsLoading(false);
-  //   };
+      setIsLoading(false);
+    };
 
-  //   initAuth();
-  // }, []);
+    initAuth();
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('authToken');

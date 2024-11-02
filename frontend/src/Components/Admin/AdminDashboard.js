@@ -1,4 +1,5 @@
 import React from 'react';
+import {  Link } from'react-router-dom';
 
 export default function AdminDashboard() {
   return (
@@ -12,7 +13,7 @@ export default function AdminDashboard() {
             <p className="text-center mb-6">Welcome to the Admin Dashboard. You can manage the system here.</p>
             <div className="space-y-4">
               <button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded">
-                Manage Users
+                <Link to='admin-dashboard/users'>Manage Users </Link>
               </button>
               <button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded">
                 Manage Books
