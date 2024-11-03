@@ -15,6 +15,7 @@ import Books from '../Components/Admin/BooksPage';
 import Settings from '../Components/Admin/SystemSettings';
 import Reports from '../Components/Admin/Reports';
 import Orders from '../Components/Admin/Orders';
+import AboutUs from '../Components/AboutUs';
 
 const AppRoutes = () => {
   return (
@@ -27,6 +28,7 @@ const AppRoutes = () => {
       <Route path="/profile" element={<Profile />} />
       <Route path="/books/:id" element={<Book />} />
       <Route path="/cart" element={<CartPage />} />
+      <Route path="/about" element={<AboutUs />} />
 
       {/* Protected Route for Shop */}
       <Route path="/shop" element={<Shop />} />

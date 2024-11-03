@@ -6,6 +6,7 @@ import Feature from './homepage/Feature.js';
 import Reviews from './homepage/Reviews.js';
 import Footer from './Footer.js';
 import apiService from '../services/api.js';
+import {Link} from 'react-router-dom';
 
 
 // BookCarousel component (unchanged)
@@ -29,14 +30,14 @@ const BookCarousel = ({ books }) => {
             transform: `translateX(-${startIndex * (100 / books.length)}%)`,
             width: `${books.length * 100}%`
           }}>
-            {books.map((book, index) => (
-              <div key={index} className="w-1/10 px-2 flex-shrink-0">
+            {books.map((book) => (
+              <Link to={`/books/${book._id}`} className="w-1/10 px-2 flex-shrink-0">
                 <div className="bg-emerald-700 p-4 rounded-lg shadow-lg transform hover:scale-105 transition-transform duration-200">
                   <img src={book.fullImageUrl} alt={book.title} className="w-auto h-64 object-cover rounded-md mb-4" />
                   <h3 className="text-white text-lg font-semibold truncate">{book.title}</h3>
                   <p className="text-gray-400 text-sm">{book.author}</p>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
