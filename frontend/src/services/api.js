@@ -17,6 +17,7 @@ class ApiService {
                 const token = localStorage.getItem('authToken');
                 if (token) {
                     config.headers.Authorization = `Bearer ${token}`;
+                    console.log("Token added to request headers:", token);
                 }
                 return config;
             },
@@ -76,7 +77,12 @@ class ApiService {
             };
         }
 
-        console.error('[API Error]:', errorResponse);
+        console.error('[API Error]:', {
+            error,
+            errorResponse,
+            stack: error.stack
+        });
+        
         return errorResponse;
     }
 
@@ -123,9 +129,9 @@ class ApiService {
 
     async getCartItems() {
         try {
-            if (!this.isAuthenticated()) {
-                throw new Error('Please sign in to view cart');
-            }
+            // if (!this.isAuthenticated()) {
+            //     throw new Error('Please sign in to view cart');
+            // }
             return await this.client.get('/cart');
         } catch (error) {
             throw this.handleError(error);
@@ -137,17 +143,24 @@ class ApiService {
             if (!this.isAuthenticated()) {
                 throw new Error('Please sign in to remove items from cart');
             }
-            return await this.client.delete(`/cart/remove/${bookId}`);
+            const userId = localStorage.getItem('userId');
+            // Changed to POST request since some backends handle DELETE requests differently
+            const response = await this.client.post(`/cart/remove`, {
+                bookId,
+                userId
+            });
+            return response.data;
         } catch (error) {
+            console.error('API removeFromCart error:', error);
             throw this.handleError(error);
         }
     }
 
     async updateCartItem(bookId, quantity) {
         try {
-            if (!this.isAuthenticated()) {
-                throw new Error('Please sign in to update cart');
-            }
+            // if (!this.isAuthenticated()) {
+            //     throw new Error('Please sign in to update cart');
+            // }
             return await this.client.put(`/cart/update/${bookId}`, { quantity });
         } catch (error) {
             throw this.handleError(error);

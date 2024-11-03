@@ -73,15 +73,15 @@ const userSchema = new mongoose.Schema({
   },
   favorites:[
     { type:mongoose.Types.ObjectId,
-    ref:"books",
+    ref:"Book",
   }],
   cart:[
     { type:mongoose.Types.ObjectId,
-    ref:"books",
+    ref:"Book",
   }],
   orders:[
     { type:mongoose.Types.ObjectId,
-    ref:"order",
+    ref:"Order",
   }],
 }, { timestamps: true });
 
@@ -107,6 +107,7 @@ userSchema.methods.isValidPassword = async function(password) {
 userSchema.methods.updatePassword = async function(newPassword) {
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(newPassword, salt);
+  await this.save();
 };
 
 const User = mongoose.model('User', userSchema);

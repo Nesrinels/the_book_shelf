@@ -3,6 +3,7 @@ const router = express.Router();
 const Cart = require('../Models/Cart');
 const Book = require('../Models/Book');
 const auth = require('../middleware/authMiddleware');
+const authMiddleware = require('../middleware/authMiddleware');
 
 // Add item to cart
 router.post('/add', auth, async (req, res) => {
@@ -65,21 +66,20 @@ router.post('/add', auth, async (req, res) => {
 });
 
 // Get cart
-router.get('/', async (req, res) => {
+router.get('/', authMiddleware, async (req, res) => {
     try {
-        // if (!req.user || !req.user.id) {
-        //     return res.status(401).json({ message: 'User not authenticated' });
-        // }
-        console.log(req);
+        if (!req.user || !req.user._id) {
+            return res.status(401).json({ message: 'User not authenticated' });
+        }
+
         const cart = await Cart.findOne({ user: req.user._id })
             .populate('items.book', 'title author price imageUrl');
-        
+
         if (!cart) {
             return res.status(200).json({ items: [], totalAmount: 0 });
         }
-        
+
         res.status(200).json(cart);
-        
     } catch (error) {
         console.error('Get cart error:', error);
         res.status(500).json({ 
@@ -89,22 +89,34 @@ router.get('/', async (req, res) => {
     }
 });
 
-router.delete('/remove/:bookId', auth, async (req, res) => {
+
+// Remove item from cart
+router.delete('/remove/:bookId', authMiddleware, async (req, res) => {
     try {
-        if (!req.user || !req.user.id) {
+        if (!req.user || !req.user._id) {
             return res.status(401).json({ message: 'User not authenticated' });
         }
 
-        const cart = await Cart.findOne({ user: req.user.id });
+        const cart = await Cart.findOne({ user: req.user._id });
         
         if (!cart) {
             return res.status(404).json({ message: 'Cart not found' });
         }
 
-        cart.items = cart.items.filter(
-            item => item.book.toString() !== req.params.bookId
-        );
+        // Ensure items array exists
+        if (!cart.items) {
+            return res.status(404).json({ message: 'No items found in cart' });
+        }
+
+        // Filter out the item to be removed
+        const initialItemCount = cart.items.length;
+        cart.items = cart.items.filter(item => item.book.toString() !== req.params.bookId);
         
+        // Check if an item was actually removed
+        if (cart.items.length === initialItemCount) {
+            return res.status(404).json({ message: 'Book not found in cart' });
+        }
+
         // Recalculate total amount
         cart.totalAmount = cart.items.reduce((total, item) => total + item.subtotal, 0);
         
@@ -122,48 +134,5 @@ router.delete('/remove/:bookId', auth, async (req, res) => {
     }
 });
 
-router.put('/update/:bookId', auth, async (req, res) => {
-    try {
-        const { quantity } = req.body;
-        if (!quantity || quantity < 1) {
-            return res.status(400).json({ message: 'Invalid quantity' });
-        }
-
-        if (!req.user || !req.user.id) {
-            return res.status(401).json({ message: 'User not authenticated' });
-        }
-
-        const cart = await Cart.findOne({ user: req.user.id });
-        if (!cart) {
-            return res.status(404).json({ message: 'Cart not found' });
-        }
-
-        const item = cart.items.find(
-            item => item.book.toString() === req.params.bookId
-        );
-
-        if (!item) {
-            return res.status(404).json({ message: 'Item not found in cart' });
-        }
-
-        item.quantity = quantity;
-        item.subtotal = item.price * quantity;
-        
-        // Recalculate total amount
-        cart.totalAmount = cart.items.reduce((total, item) => total + item.subtotal, 0);
-        
-        await cart.save();
-        await cart.populate('items.book', 'title author price imageUrl');
-        
-        res.status(200).json(cart);
-
-    } catch (error) {
-        console.error('Update cart error:', error);
-        res.status(500).json({ 
-            message: 'Failed to update cart',
-            error: error.message 
-        });
-    }
-});
 
 module.exports = router;

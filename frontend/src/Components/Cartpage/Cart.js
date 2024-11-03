@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { X, ShoppingCart, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../../contexts/CartContext';
+import apiService from '../../services/api';
 
 const CartButton = ({ book }) => {
   const { addItem, error: cartError, loading, clearError } = useCart();
@@ -29,7 +30,6 @@ const CartButton = ({ book }) => {
 
     if (!book?._id) {
       setShowError(true);
-      return;
     }
 
     try {
@@ -69,11 +69,14 @@ const CartButton = ({ book }) => {
   );
 };
 
-const CartItem = React.memo(({ item, onRemove, isRemoving }) => (
+const CartItem = React.memo(({ item, onRemove, isRemoving }) => {
+  const itemId = item.book?._id || item._id;
+
+  return (
   <div className="flex items-center gap-3 relative group">
     <div className="w-16 h-20 overflow-hidden rounded bg-gray-100">
       <img 
-        src={item.fullImageUrl || '/api/placeholder/100/150'} 
+        src={item.book?.fullImageUrl  || item.imageUrl || '/api/placeholder/100/150'} 
         alt={item.title}
         className="w-full h-full object-cover"
         onError={(e) => {
@@ -84,34 +87,35 @@ const CartItem = React.memo(({ item, onRemove, isRemoving }) => (
     </div>
     <div className="flex-1 min-w-0">
       <h3 className="text-sm font-medium text-gray-800 truncate">
-        {item.title}
+        {item.book?.title || item.title}
       </h3>
       <p className="text-sm text-gray-600 truncate">
-        By {item.author}
+        By {item.book?.author || item.author}
       </p>
       <p className="text-emerald-600 font-medium">
-        ${parseFloat(item.price).toFixed(2)}
+        ${parseFloat(item.book?.price || item.price).toFixed(2)}
         {item.quantity > 1 && ` × ${item.quantity}`}
       </p>
     </div>
     <button 
-      onClick={() => onRemove(item._id)}
-      disabled={isRemoving === item._id}
-      className={`absolute top-0 right-0 p-1 transition-colors ${
-        isRemoving === item._id 
-          ? 'text-gray-400' 
-          : 'text-pink-500 hover:text-pink-700 opacity-0 group-hover:opacity-100'
-      }`}
-      aria-label="Remove item"
-    >
-      {isRemoving === item._id ? (
+        onClick={() => onRemove(itemId)}
+        disabled={isRemoving === itemId}
+        className={`absolute top-0 right-0 p-1 transition-colors ${
+          isRemoving === itemId
+            ? 'text-gray-400' 
+            : 'text-pink-500 hover:text-pink-700 opacity-0 group-hover:opacity-100'
+        }`}
+        aria-label="Remove item"
+      >
+      {isRemoving === itemId ? (
         <div className="animate-spin h-4 w-4 border-2 border-pink-500 border-t-transparent rounded-full"/>
       ) : (
         <X size={16} />
       )}
     </button>
   </div>
-));
+  );
+});
 
 CartItem.displayName = 'CartItem';
 
@@ -178,14 +182,15 @@ const Cart = () => {
   }, []);
 
   const handleRemoveItem = async (itemId) => {
-    if (!itemId) return;
-
+  if (!itemId) return;
+  
     try {
       setIsRemoving(itemId);
       await removeItem(itemId);
       showNotification('success', 'Item removed from cart');
     } catch (error) {
-      showNotification('error', 'Failed to remove item');
+      console.error('Remove item error:', error);
+      showNotification('error', error.message || 'Failed to remove item');
     } finally {
       setIsRemoving(null);
     }

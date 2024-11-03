@@ -76,10 +76,17 @@ export const CartProvider = ({ children }) => {
 
     try {
       setLoading(true);
-      await apiService.removeFromCart(id);
-      setCartItems(prev => prev.filter(item => item._id !== id));
-      setError(null);
-      return true;
+      const response = await apiService.removeFromCart(id);
+      
+      if (response?.data?.success || response.status === 200) {
+        setCartItems(prev => prev.filter(item => {
+          const itemId = item.book?._id || item._id;
+          return itemId !== id;
+        }));
+        setError(null);
+        return true;
+      }
+      throw new Error('Failed to remove item');
     } catch (err) {
       const errorMessage = handleApiError(err);
       return Promise.reject(new Error(errorMessage));

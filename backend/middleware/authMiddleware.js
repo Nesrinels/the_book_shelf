@@ -3,7 +3,23 @@ const User = require('../Models/User');
 
 const authMiddleware = async (req, res, next) => {
   try {
-    // 1. Extract and validate Authorization header
+    req.isAuthenticated = false;
+    // 1. Check for session-based authentication first
+    if (req.session && req.session.userId) {
+      const sessionUser = await User.findById(req.session.userId)
+        .select('+cart')
+        .lean();
+      
+      if (sessionUser) {
+        req.user = sessionUser;
+        req.authMethod = 'session';
+        handleAuthenticatedRequest(req);
+        req.isAuthenticated = true;
+        return next();
+      }
+    }
+
+    // 2. Extract and validate Authorization header for JWT authentication
     const authHeader = req.header('Authorization');
     
     // Only log in development mode
@@ -11,34 +27,26 @@ const authMiddleware = async (req, res, next) => {
       console.log('[Auth] Request headers:', {
         auth: authHeader,
         origin: req.headers.origin,
-        path: req.path
+        path: req.path,
+        sessionId: req.session?.id
       });
     }
 
+    // Allow requests without Authorization header to proceed as unauthenticated
     if (!authHeader) {
-      console.log('[Auth] Missing Authorization header');
-      return res.status(401).json({
-        status: 'error',
-        message: 'No authorization header found',
-        code: 'NO_AUTH_HEADER'
-      });
+      return res.status(401).json({ message: 'User not authenticated' });
     }
 
-    // 2. Extract and validate token format
+    // 3. Extract and validate token format
     const [bearer, token] = authHeader.split(' ');
     
     if (bearer !== 'Bearer' || !token) {
-      console.log('[Auth] Invalid token format:', { bearer, hasToken: !!token });
-      return res.status(401).json({
-        status: 'error',
-        message: 'Invalid authorization format',
-        code: 'INVALID_AUTH_FORMAT'
-      });
+      return res.status(401).json({ message: 'Invalid token format' });
     }
 
-    // 3. Verify token
+    // 4. Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET, {
-      algorithms: ['HS256'] // Specify allowed algorithms for verification
+      algorithms: ['HS256']
     });
 
     if (process.env.NODE_ENV === 'development') {
@@ -50,53 +58,24 @@ const authMiddleware = async (req, res, next) => {
     }
 
     if (!decoded.userId) {
-      console.log('[Auth] Missing userId in token payload');
-      return res.status(401).json({
-        status: 'error',
-        message: 'Invalid token payload',
-        code: 'INVALID_TOKEN_PAYLOAD'
-      });
+      return res.status(401).json({ message: 'Invalid token payload' });
     }
 
-    // 4. Fetch and validate user from database
+    // 5. Fetch and validate user from database
     const user = await User.findById(decoded.userId)
       .select('+cart')
       .lean();
     
     if (!user) {
-      console.log('[Auth] User not found:', decoded.userId);
-      return res.status(404).json({
-        status: 'error',
-        message: 'User not found',
-        code: 'USER_NOT_FOUND'
-      });
+      return res.status(401).json({ message: 'User not found' });
     }
 
-    // 5. Special handling for cart endpoints
-    if (req.path.includes('/api/cart')) {
-      if (!user.cart) {
-        user.cart = []; // Initialize cart if it doesn't exist
-      }
-      console.log('[Auth] Cart access:', {
-        userId: user._id,
-        cartItems: user.cart.length,
-        endpoint: req.path
-      });
-    }
-
-    // 6. Attach user and token to request object
+    // 6. Setup authenticated request
     req.user = user;
     req.token = token;
-
-    // Add response success helper
-    req.sendSuccess = (data) => {
-      return res.status(200).json({
-        status: 'success',
-        data,
-        code: 'SUCCESS'
-      });
-    };
-
+    req.authMethod = 'jwt';
+    handleAuthenticatedRequest(req);
+    
     // 7. Proceed to the next middleware or route handler
     next();
 
@@ -107,21 +86,11 @@ const authMiddleware = async (req, res, next) => {
       stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
 
-    // Handle specific JWT errors
+    // Handle JWT errors silently and proceed as unauthenticated
     if (error instanceof jwt.TokenExpiredError) {
-      return res.status(401).json({
-        status: 'error',
-        message: 'Token has expired',
-        code: 'TOKEN_EXPIRED'
-      });
-    }
-
-    if (error instanceof jwt.JsonWebTokenError) {
-      return res.status(401).json({
-        status: 'error',
-        message: 'Invalid token',
-        code: 'INVALID_TOKEN'
-      });
+      return res.status(401).json({ message: 'Token expired' });
+    } else if (error instanceof jwt.JsonWebTokenError) {
+      return res.status(401).json({ message: 'Invalid token' });
     }
 
     // Handle any other unexpected authentication errors
@@ -133,5 +102,32 @@ const authMiddleware = async (req, res, next) => {
     });
   }
 };
+
+// Helper function to setup authenticated request
+function handleAuthenticatedRequest(req) {
+  req.isAuthenticated = true;
+  
+  // Initialize cart if accessing cart endpoints
+  if (req.path.includes('/api/cart')) {
+    if (!req.user.cart) {
+      req.user.cart = [];
+    }
+    console.log('[Auth] Cart access:', {
+      userId: req.user._id,
+      cartItems: req.user.cart.length,
+      endpoint: req.path,
+      authMethod: req.authMethod
+    });
+  }
+
+  // Add response success helper
+  req.sendSuccess = (data) => {
+    return res.status(200).json({
+      status: 'success',
+      data,
+      code: 'SUCCESS'
+    });
+  };
+}
 
 module.exports = authMiddleware;
