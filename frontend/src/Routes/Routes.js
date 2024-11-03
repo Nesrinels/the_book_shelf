@@ -12,6 +12,9 @@ import Book from '../Components/Book';
 import CartPage from '../Components/Cartpage/CartPage'; 
 import Users from '../Components/Admin/UsersPage';
 import Books from '../Components/Admin/BooksPage';
+import Settings from '../Components/Admin/SystemSettings';
+import Reports from '../Components/Admin/Reports';
+import Orders from '../Components/Admin/Orders';
 
 const AppRoutes = () => {
   return (
@@ -26,41 +29,31 @@ const AppRoutes = () => {
       <Route path="/cart" element={<CartPage />} />
 
       {/* Protected Route for Shop */}
-      <Route
-        path="/shop"
-         element={ <Shop />
-        }
-      />
+      <Route path="/shop" element={<Shop />} />
 
-<Route
-  path="/admin-dashboard"
-  element={
-    <ProtectedRoute isAdminRoute={true}>
-      <AdminDashboard />
-    </ProtectedRoute>
-  }
->
-  {/* Nested Admin Routes */}
-  <Route
-    path="users"
-    element={
-      <ProtectedRoute isAdminRoute={true}>
-        <Users />
-      </ProtectedRoute>
-    }
-  />
+      <Route
+        path="/admin-dashboard"
+        element={
+          <ProtectedRoute isAdminRoute={true}>
+            <AdminDashboard />
+          </ProtectedRoute>
+        }
+      >
+        {/* Nested Admin Routes */}
         <Route
-          path="books"
-          element={<Books />}
+          path="users"
+          element={
+            <ProtectedRoute isAdminRoute={true}>
+              <Users />
+            </ProtectedRoute>
+          }
         />
-        {/* <Route
-          path="reports"
-          element={<Reports />}
-        />
-        <Route
-          path="settings"
-          element={<Settings />}
-        /> */}
+        <Route path="books" element={<Books />} />
+        <Route path="reports" element={<Reports />}>
+          {/* Nested route for Orders under Reports */}
+          <Route path="orders" element={<Orders />} />
+        </Route>
+        <Route path="settings" element={<Settings />} />
       </Route>
     </Routes>
   );
