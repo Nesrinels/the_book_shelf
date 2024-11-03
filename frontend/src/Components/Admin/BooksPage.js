@@ -185,6 +185,10 @@ const BooksManagementPage = () => {
                     src={imagePreview}
                     alt="Preview"
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = "/api/placeholder/300/400";
+                    }}
                   />
                 ) : (
                   <div className="text-center p-4">
@@ -389,29 +393,27 @@ const BooksManagementPage = () => {
       <tr key={book.id} className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
         <td className="p-4">
           <div className="w-16 h-20 rounded overflow-hidden">
-            {book.imageUrl ? (
               <img
-                src={book.imageUrl}
-                alt={book.title}
+                src={book.fullImageUrl}
+                alt={`Cover of ${book.title}`}
                 className="w-full h-full object-cover"
+                onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = "/api/placeholder/100/150";
+                }}
               />
-            ) : (
-              <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-                <span className="text-gray-400 text-xs">No Image</span>
-              </div>
-            )}
           </div>
         </td>
         <td className="p-4">{book.title}</td>
         <td className="p-4">{book.author}</td>
         <td className="p-4">{book.genre}</td>
         <td className="p-4">{book.publishedYear}</td>
-        <td className="p-4">${book.price}</td>
+        <td className="p-4">${typeof book.price === 'number' ? book.price.toFixed(2) : book.price}</td>
         <td className="p-4">
           <div className="flex items-center gap-1">
             <span>⭐</span>
-            <span>{book.averageRating.toFixed(1)}</span>
-            <span className="text-gray-400 text-sm">({book.reviewsCount})</span>
+            <span>{(book.averageRating || 0).toFixed(1)}</span>
+            <span className="text-gray-400 text-sm">({book.reviewsCount || 0})</span>
           </div>
         </td>
         <td className="p-4">
