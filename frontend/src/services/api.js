@@ -208,17 +208,35 @@ class ApiService {
         }
     }
 
-    async getProfile(){
+    async getProfile() {
         try {
-            const userId = localStorage.getItem('userId');
-            return await this.client.get(`/users/${userId}`);
+            // For getting your own profile
+            return await this.client.get('/auth/profile');
         } catch (error) {
             throw this.handleError(error);
         }
-    } 
+    }
+    
+    async getUserProfile(userId) {
+        try {
+            // For getting any user's profile
+            return await this.client.get(`/auth/users/${userId}`);
+        } catch (error) {
+            throw this.handleError(error);
+        }
+    }
+    
     async getAllUsers() {
         try {
             return await this.client.get('/auth/users');
+        } catch (error) {
+            throw this.handleError(error);
+        }
+    }
+    
+    async updateProfile(userId, userData) {
+        try {
+            return await this.client.put(`/auth/users/${userId}`, userData);
         } catch (error) {
             throw this.handleError(error);
         }

@@ -9,18 +9,21 @@ const ProfilePage = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    const userId = localStorage.getItem('userId');
+    const authToken = localStorage.getItem('authToken');
+    if (!userId || !authToken) {
+       setError("User not authenticated");
+       return;
+    }
     fetchUserData();
-  }, []);
+ }, []);
 
-  const fetchUserData = async () => {
-    try {
-      const userId = localStorage.getItem('userId');
-      if (!userId) {
-        setError('User not authenticated');
-        setLoading(false);
-        return; // Don't call logout, just handle it with the error state
-      }
-      const response = await apiService.client.get(`/users/${userId}`);
+ const fetchUserData = async () => {
+  try {
+     const userId = localStorage.getItem('userId');
+     if (!userId) throw new Error('User not authenticated');
+     const response = await apiService.getUserProfile(userId);
+     console.log("User data fetched successfully:", response);
 
       if (!response || !response.data) {
         throw new Error('Invalid response from server');
@@ -47,11 +50,11 @@ const ProfilePage = () => {
       });
       setLoading(false);
     } catch (error) {
-      setError(error.message);
-      setLoading(false);
-      // No need to call logout here
-    }
-  };
+      console.error("fetchUserData error:", error);
+      setError(error.message || 'Failed to fetch user data');
+      if (error.status === 401) apiService.logout();
+   }
+};
 
   const calculateGenres = (booksRead) => {
     const genreCounts = {};
@@ -69,11 +72,17 @@ const ProfilePage = () => {
 
   const handleEditProfile = async (updatedData) => {
     try {
+      setLoading(true);
       const userId = localStorage.getItem('userId');
-      await apiService.client.put(`/users/${userId}`, updatedData);
-      await fetchUserData();
+      if (!userId) {
+        throw new Error('User not authenticated');
+      }
+
+      // Using updateProfile from apiService
+      await apiService.updateProfile(userId, updatedData);
+      await fetchUserData(); // Refresh the data after update
     } catch (error) {
-      console.error('Error updating profile', error);
+      console.error('Error updating profile:', error);
       setError(error.message || 'Failed to update profile');
     } finally {
       setLoading(false);

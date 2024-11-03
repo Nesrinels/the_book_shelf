@@ -14,32 +14,29 @@ const userController = {
   getProfile: async (req, res) => {
     try {
       if (!req.user) {
-        return res.status(401).json({ message: 'Authentication required ' });
+        return res.status(401).json({ message: 'Authentication required' });
       }
-      const user = await User.findById(req.params.userId)
+  
+      const userId = req.params.userId || req.user._id; // Use the authenticated user's ID if no specific ID is provided
+      
+      const user = await User.findById(userId)
         .populate('booksRead.book')
         .populate('groups')
         .populate('following', 'username email')
         .populate('friends', 'username email')
-        .select('-password');      
+        .select('-password');
+        
       if (!user) {
         return res.status(404).json({ message: 'User not found' });
       }
-
-       // Add null checks
-       const requestingUserId = req.user._id ? req.user._id.toString() : null;
-       const requestedUserId = req.params.userId;
- 
-       if (!requestingUserId || (requestingUserId !== requestedUserId && req.user.role !== 'admin')) {
-         return res.status(403).json({ message: 'Unauthorized to view this profile' });
-       }
- 
-       res.json(user);
-     } catch (error) {
-       console.error('Profile fetch error:', error);
-       res.status(500).json({ message: 'Error fetching profile', error: error.message });
-     }
-   },
+  
+      // Now any authenticated user can view any profile
+      res.json(user);
+    } catch (error) {
+      console.error('Profile fetch error:', error);
+      res.status(500).json({ message: 'Error fetching profile', error: error.message });
+    }
+  },
 
   updateProfile: async (req, res) => {
     try {
@@ -132,37 +129,16 @@ router.post('/login', async (req, res) => {
 // Profile routes - now userController is defined before these routes
 router.get('/users', async (req, res) => {
   try {
-    const users = await User.find({});
+    const users = await User.find({}).select('-password');
     res.json(users);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
-})
-router.get('/users/:id', authMiddleware, async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    res.json(user);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
 });
+
+router.get('/users/:userId', authMiddleware, userController.getProfile);
+
 router.put('/users/:id', authMiddleware, userController.updateProfile);
-
-
-router.get('/:id', authMiddleware, async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    res.json(user);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
 // Protected profile route
 router.get('/profile', authMiddleware, (req, res) => {
   res.json({ message: 'This is your profile', userId: req.user });
