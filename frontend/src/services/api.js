@@ -242,6 +242,22 @@ class ApiService {
         }
     }
     
+
+    async updateReadingChallenge(userId, challengeData) {
+        try {
+          return await this.client.put(`/auth/users/${userId}/reading-challenge`, challengeData);
+        } catch (error) {
+          throw this.handleError(error);
+        }
+      }
+      
+      async getLastYearBooks(userId) {
+        try {
+          return await this.client.get(`/auth/users/${userId}/last-year-books`);
+        } catch (error) {
+          throw this.handleError(error);
+        }
+      }
     // Auth status checks
     isAuthenticated() {
         return !!localStorage.getItem('authToken');

@@ -40,16 +40,39 @@ const userController = {
 
   updateProfile: async (req, res) => {
     try {
+      // Add debugging logs
+      console.log('Authenticated user ID:', req.user._id);
+      console.log('Target user ID:', req.params.userId);
+      console.log('User role:', req.user.role);
+      
+      // Convert ObjectId to string for comparison if needed
+      const authenticatedUserId = req.user._id.toString();
+      const targetUserId = req.params.userId;
+
       // Check if the requesting user has permission to update this profile
-      if (req.user._id.toString() !== req.params.userId && req.user.role !== 'admin') {
-        return res.status(403).json({ message: 'Unauthorized to update this profile' });
+      if (authenticatedUserId !== targetUserId && req.user.role !== 'admin') {
+        console.log('Auth failed - authenticated user:', authenticatedUserId);
+        console.log('Auth failed - target user:', targetUserId);
+        console.log('Auth failed - user role:', req.user.role);
+        return res.status(403).json({ 
+          message: 'Unauthorized to update this profile',
+          authenticatedUser: authenticatedUserId,
+          targetUser: targetUserId,
+          role: req.user.role
+         });
       }
 
+      // Remove sensitive fields from the update data
+      const updateData = { ...req.body };
+      delete updateData.password; // Prevent password update through this route
+      delete updateData.role; // Prevent role update through this route
+
+
       const updatedUser = await User.findByIdAndUpdate(
-        req.params.userId,
-        { $set: req.body },
+        targetUserId,
+        { $set: updateData },
         { new: true, runValidators: true }
-      );
+      ).select('-password'); // Exclude password from response
 
       if (!updatedUser) {
         return res.status(404).json({ message: 'User not found' });
@@ -57,11 +80,67 @@ const userController = {
 
       res.json(updatedUser);
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      console.error('Profile update error:', error);
+      res.status(500).json({ 
+        message: 'Error updating profile', 
+        error: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
     }
-  }
-};
+},
 
+
+updateReadingChallenge: async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const challengeData = req.body;
+
+    // Verify user permissions
+    if (req.user._id.toString() !== userId && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Unauthorized to update reading challenge' });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $set: { readingChallenge: challengeData } },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json(updatedUser.readingChallenge);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+},
+
+getLastYearBooks: async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const lastYear = new Date().getFullYear() - 1;
+
+    const user = await User.findById(userId)
+      .populate('booksRead.book')
+      .select('booksRead');
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Filter books read in the last year
+    const lastYearBooks = user.booksRead.filter(book => {
+      const readDate = new Date(book.dateRead);
+      return readDate.getFullYear() === lastYear;
+    });
+
+    res.json(lastYearBooks);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+}
+};
 // Registration route
 router.post('/register', async (req, res) => {
   try {
@@ -138,10 +217,13 @@ router.get('/users', async (req, res) => {
 
 router.get('/users/:userId', authMiddleware, userController.getProfile);
 
-router.put('/users/:id', authMiddleware, userController.updateProfile);
+router.put('/users/:userId', authMiddleware, userController.updateProfile);
 // Protected profile route
 router.get('/profile', authMiddleware, (req, res) => {
   res.json({ message: 'This is your profile', userId: req.user });
 });
+
+router.put('/users/:userId/reading-challenge', authMiddleware, userController.updateReadingChallenge);
+router.get('/users/:userId/last-year-books', authMiddleware, userController.getLastYearBooks);
 
 module.exports = router;

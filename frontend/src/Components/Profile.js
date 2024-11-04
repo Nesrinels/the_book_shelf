@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Heart, MessageCircle, Book, Users, BookOpen, Target } from 'lucide-react';
+import { Target, Plus, Minus, BookOpen, Heart, MessageCircle, Book, Users } from 'lucide-react';
 import apiService from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -9,20 +9,18 @@ const ProfilePage = () => {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('PROFILE');
-
-  console.log("AuthContext - isAuthenticated:", isAuthenticated, "user:", user, "isLoading:", isLoading); // Check values
+  const [showChallengeModal, setShowChallengeModal] = useState(false);
+  const [challengeGoal, setChallengeGoal] = useState(0);
+  const [lastYearBooksList, setLastYearBooksList] = useState([]);
+  const [showLastYearBooks, setShowLastYearBooks] = useState(false);
 
   const fetchUserData = useCallback(async () => {
-    if (!isAuthenticated || !user || !user.id) {
-      console.log("fetchUserData skipped - missing user or isAuthenticated");
-      return; // Ensure user and user.id are available
-    }
-
-    console.log("fetchUserData executing"); // Log fetch initiation
+    if (!isAuthenticated || !user || !user.id) return;
 
     try {
       const response = await apiService.getUserProfile(user.id);
       setUserData({
+        ...response,
         username: response.username,
         bio: response.bio,
         profilePicture: response.profilePicture || 'https://cdn-icons-png.flaticon.com/128/3177/3177440.png',
@@ -36,10 +34,12 @@ const ProfilePage = () => {
           goal: response.readingChallenge?.goal || 0,
           current: response.readingChallenge?.current || 0
         },
-        lastYearBooks: response.lastYearBooks || 0,
+        lastYearBooks: response.lastYearBooks || [],
         groups: response.groups || [],
         genres: calculateGenres(response.booksRead || [])
       });
+      setLastYearBooksList(response.lastYearBooks || []);
+      setChallengeGoal(response.readingChallenge?.goal || 0);
       setLoading(false);
     } catch (error) {
       console.error("fetchUserData error:", error);
@@ -70,13 +70,19 @@ const ProfilePage = () => {
       .slice(0, 4);
   };
 
-  const handleEditProfile = async (updatedData) => {
+  const handleChallengeUpdate = async (newGoal) => {
     try {
-      await apiService.updateProfile(user.id, updatedData); // Use user.id as per the backend
+      await apiService.updateProfile(user.id, {
+        readingChallenge: {
+          goal: newGoal,
+          current: userData.readingChallenge.current
+        }
+      });
       await fetchUserData();
+      setShowChallengeModal(false);
     } catch (error) {
-      console.error('Error updating profile:', error);
-      setError(error.message || 'Failed to update profile');
+      console.error('Error updating reading challenge:', error);
+      setError(error.message || 'Failed to update reading challenge');
     }
   };
 
@@ -98,8 +104,8 @@ const ProfilePage = () => {
 
   if (loading) {
     return (
-      <div className='min-h-screen flex items-center justify-center'>
-        <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600'></div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
       </div>
     );
   }
@@ -118,12 +124,8 @@ const ProfilePage = () => {
           />
         </div>
         <button
-          onClick={() => {
-            handleEditProfile({
-              bio: "Updated bio"
-            });
-          }}
-          className="absolute top-4 right-4 bg-white px-3 py-1 sm:px-4 sm:py-2 rounded-md text-sm"
+          onClick={() => {/* Handle edit profile */}}
+          className="absolute top-4 right-4 bg-white px-3 py-1 sm:px-4 sm:py-2 rounded-md text-sm hover:bg-gray-50"
         >
           Edit Profile
         </button>
@@ -133,116 +135,157 @@ const ProfilePage = () => {
       <div className="pt-12 sm:pt-16 px-4 sm:px-8">
         <h1 className="text-xl sm:text-2xl font-bold">{userData.username}</h1>
         <p className="text-sm sm:text-base text-gray-600 mt-2">
-          {userData.bio || 'no bio added yet'}
+          {userData.bio || 'No bio added yet'}
         </p>
       </div>
 
-      {/* Stats Bar */}
-      <div className="flex justify-center space-x-4 sm:space-x-8 mt-4 sm:mt-6 px-2">
-        <StatCard label="Books Read" value={userData.booksReadCount} />
-        <StatCard label="Following" value={userData.followingCount} />
-        <StatCard label="Friends" value={userData.friendsCount} />
+      {/* Stats */}
+      <div className="flex justify-center space-x-8 mt-6">
+        <div className="text-center">
+          <div className="font-bold text-xl">{userData.booksReadCount}</div>
+          <div className="text-sm text-gray-600">Books Read</div>
+        </div>
+        <div className="text-center">
+          <div className="font-bold text-xl">{userData.followingCount}</div>
+          <div className="text-sm text-gray-600">Following</div>
+        </div>
+        <div className="text-center">
+          <div className="font-bold text-xl">{userData.friendsCount}</div>
+          <div className="text-sm text-gray-600">Friends</div>
+        </div>
       </div>
 
-      {/* Navigation Tabs */}
-      <div className="border-b mt-4 overflow-x-auto">
-        <div className="flex px-4 sm:px-8 min-w-max">
-          {[
-            { name: 'PROFILE', count: null },
-            { name: 'BOOKS', count: userData.booksReadCount },
-            { name: 'FOLLOWING', count: userData.followingCount },
-            { name: 'FRIENDS', count: userData.friendsCount },
-            { name: 'GROUPS', count: userData.groups.length },
-            { name: 'REVIEWS', count: userData.booksRead?.length }
-          ].map(({ name, count }) => (
-            <TabButton
-              key={name}
-              name={name}
-              count={count}
-              isActive={activeTab === name}
-              onClick={() => setActiveTab(name)}
-            />
+      {/* Navigation */}
+      <div className="border-b mt-6">
+        <div className="flex px-4 sm:px-8 space-x-4 overflow-x-auto">
+          {['PROFILE', 'BOOKS', 'FOLLOWING', 'FRIENDS', 'GROUPS', 'REVIEWS'].map(tab => (
+            <button
+              key={tab}
+              className={`px-4 py-2 font-medium whitespace-nowrap ${
+                activeTab === tab
+                  ? 'border-b-2 border-emerald-600 text-emerald-600'
+                  : 'text-gray-600'
+              }`}
+              onClick={() => setActiveTab(tab)}
+            >
+              {tab}
+            </button>
           ))}
         </div>
       </div>
 
-      {/* Content Section */}
-      <div className="max-w-4xl mx-auto py-4 sm:py-8 px-4">
+      {/* Content */}
+      <div className="max-w-4xl mx-auto py-8 px-4">
         {activeTab === 'PROFILE' && (
-          <div className="space-y-4 sm:space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-              <ReadingChallengeCard stats={userData.readingChallenge} lastYear={userData.lastYearBooks} />
-              <GenresCard genres={userData.genres} totalBooks={userData.booksReadCount} />
+          <div className="space-y-6">
+            {/* Reading Challenge Card */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center">
+                  <Target className="text-emerald-600 mr-2 h-5 w-5" />
+                  <h2 className="text-lg font-semibold">Reading Challenge</h2>
+                </div>
+                <button
+                  onClick={() => setShowChallengeModal(true)}
+                  className="px-4 py-2 text-sm bg-emerald-600 text-white rounded-md hover:bg-emerald-700"
+                >
+                  Set Goal
+                </button>
+              </div>
+              <p className="mb-4">
+                {userData.readingChallenge.current} / {userData.readingChallenge.goal} books read this year
+              </p>
+              <button
+                onClick={() => setShowLastYearBooks(!showLastYearBooks)}
+                className="text-emerald-600 hover:text-emerald-700"
+              >
+                {lastYearBooksList.length} books read last year
+              </button>
+              {showLastYearBooks && (
+                <div className="mt-4 max-h-48 overflow-y-auto">
+                  {lastYearBooksList.map((book, index) => (
+                    <div key={index} className="flex items-center space-x-2 py-1">
+                      <BookOpen className="h-4 w-4 text-gray-500" />
+                      <span>{book.title}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-            <GroupsSection groups={userData.groups} />
+
+            {/* Genres Card */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-lg font-semibold mb-4">Top Genres</h2>
+              {userData.genres.length > 0 ? (
+                userData.genres.map((genre) => (
+                  <p key={genre.name} className="py-1">
+                    {genre.name}: {genre.count} / {userData.booksReadCount} books
+                  </p>
+                ))
+              ) : (
+                <p>No genres available</p>
+              )}
+            </div>
+
+            {/* Groups Card */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-lg font-semibold mb-4">Groups</h2>
+              {userData.groups.length > 0 ? (
+                userData.groups.map((group) => (
+                  <p key={group.name} className="py-1">{group.name}</p>
+                ))
+              ) : (
+                <p>No groups joined</p>
+              )}
+            </div>
           </div>
         )}
       </div>
+
+      {/* Reading Challenge Modal */}
+      {showChallengeModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">Set Reading Challenge Goal</h3>
+            <div className="flex items-center space-x-4 mb-6">
+              <button
+                onClick={() => setChallengeGoal(Math.max(0, challengeGoal - 1))}
+                className="p-2 rounded-md border hover:bg-gray-50"
+              >
+                <Minus className="h-4 w-4" />
+              </button>
+              <input
+                type="number"
+                value={challengeGoal}
+                onChange={(e) => setChallengeGoal(parseInt(e.target.value) || 0)}
+                className="w-20 text-center border rounded-md p-2"
+              />
+              <button
+                onClick={() => setChallengeGoal(challengeGoal + 1)}
+                className="p-2 rounded-md border hover:bg-gray-50"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="flex space-x-4">
+              <button
+                onClick={() => setShowChallengeModal(false)}
+                className="flex-1 px-4 py-2 border rounded-md hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleChallengeUpdate(challengeGoal)}
+                className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
-
-// Reusable Components
-const StatCard = ({ label, value }) => (
-  <div className="text-center">
-    <div className="font-bold text-lg sm:text-xl">{value}</div>
-    <div className="text-xs sm:text-sm text-gray-600">{label}</div>
-  </div>
-);
-
-const TabButton = ({ name, count, isActive, onClick }) => (
-  <button
-    className={`px-3 sm:px-4 py-2 font-medium flex items-center whitespace-nowrap ${
-      isActive ? 'border-b-2 border-emerald-600 text-emerald-600' : 'text-gray-600'
-    }`}
-    onClick={onClick}
-  >
-    {name}
-    {count !== null && (
-      <span className="ml-2 bg-gray-200 px-1.5 py-0.5 rounded-full text-xs sm:text-sm">
-        {count}
-      </span>
-    )}
-  </button>
-);
-
-const ReadingChallengeCard = ({ stats, lastYear }) => (
-  <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-    <div className="flex items-center mb-4">
-      <Target className="text-emerald-600 mr-2 h-5 w-5" />
-      <h2 className="text-lg font-semibold">Reading Challenge</h2>
-    </div>
-    <p>
-      {stats.current} / {stats.goal} books read this year.
-    </p>
-    <p>{lastYear} books read last year.</p>
-  </div>
-);
-
-const GenresCard = ({ genres, totalBooks }) => (
-  <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-    <h2 className="text-lg font-semibold mb-4">Top Genres</h2>
-    {genres.length > 0 ? (
-      genres.map((genre) => (
-        <p key={genre.name}>
-          {genre.name}: {genre.count} / {totalBooks} books
-        </p>
-      ))
-    ) : (
-      <p>No genres available</p>
-    )}
-  </div>
-);
-
-const GroupsSection = ({ groups }) => (
-  <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-    <h2 className="text-lg font-semibold mb-4">Groups</h2>
-    {groups.length > 0 ? (
-      groups.map((group) => <p key={group.name}>{group.name}</p>)
-    ) : (
-      <p>No groups joined</p>
-    )}
-  </div>
-);
 
 export default ProfilePage;
