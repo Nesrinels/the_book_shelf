@@ -20,7 +20,6 @@ export default function Navbar() {
     const checkLoginStatus = () => {
       const token = localStorage.getItem('authToken');
       const loggedIn = !!token;
-      console.log(token);
       setIsLoggedIn(loggedIn);
       if (loggedIn) {
         // Decode the token to get the user role

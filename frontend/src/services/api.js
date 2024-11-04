@@ -17,7 +17,6 @@ class ApiService {
                 const token = localStorage.getItem('authToken');
                 if (token) {
                     config.headers.Authorization = `Bearer ${token}`;
-                    console.log("Token added to request headers:", token);
                 }
                 return config;
             },
@@ -220,7 +219,8 @@ class ApiService {
     async getUserProfile(userId) {
         try {
             // For getting any user's profile
-            return await this.client.get(`/auth/users/${userId}`);
+            const response = await this.client.get(`/auth/users/${userId}`);
+            return response.data;
         } catch (error) {
             throw this.handleError(error);
         }

@@ -21,7 +21,7 @@ export const AuthProvider = ({ children }) => {
           if (tokenExpiry > Date.now()) {
             setIsAuthenticated(true);
             setUser({
-              id: decodedToken.id,
+              id: decodedToken.userId,
               role: decodedToken.role,
               // Add any other user data from token as needed
             });

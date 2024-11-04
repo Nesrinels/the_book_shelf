@@ -1,60 +1,60 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Heart, MessageCircle, Book, Users, BookOpen, Target } from 'lucide-react';
 import apiService from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 const ProfilePage = () => {
-  const [activeTab, setActiveTab] = useState('PROFILE');
+  const { user, isAuthenticated, isLoading } = useAuth();
   const [userData, setUserData] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('PROFILE');
 
-  useEffect(() => {
-    const userId = localStorage.getItem('userId');
-    const authToken = localStorage.getItem('authToken');
-    if (!userId || !authToken) {
-       setError("User not authenticated");
-       return;
+  console.log("AuthContext - isAuthenticated:", isAuthenticated, "user:", user, "isLoading:", isLoading); // Check values
+
+  const fetchUserData = useCallback(async () => {
+    if (!isAuthenticated || !user || !user.id) {
+      console.log("fetchUserData skipped - missing user or isAuthenticated");
+      return; // Ensure user and user.id are available
     }
-    fetchUserData();
- }, []);
 
- const fetchUserData = async () => {
-  try {
-     const userId = localStorage.getItem('userId');
-     if (!userId) throw new Error('User not authenticated');
-     const response = await apiService.getUserProfile(userId);
-     console.log("User data fetched successfully:", response);
+    console.log("fetchUserData executing"); // Log fetch initiation
 
-      if (!response || !response.data) {
-        throw new Error('Invalid response from server');
-      }
-
-      const data = response.data;
-      setUserData ({
-        username: data.username,
-        bio: data.bio,
-        profilePicture: data.profilePicture || 'https://cdn-icons-png.flaticon.com/128/3177/3177440.png',
-        booksRead: data.booksRead || [],
-        booksReadCount: data.booksRead?.length || 0,
-        following: data.following || [],
-        followingCount: data.following?.length || 0,
-        friends: data.friends || [],
-        friendsCount: data.friends?.length || 0,
+    try {
+      const response = await apiService.getUserProfile(user.id);
+      setUserData({
+        username: response.username,
+        bio: response.bio,
+        profilePicture: response.profilePicture || 'https://cdn-icons-png.flaticon.com/128/3177/3177440.png',
+        booksRead: response.booksRead || [],
+        booksReadCount: response.booksRead?.length || 0,
+        following: response.following || [],
+        followingCount: response.following?.length || 0,
+        friends: response.friends || [],
+        friendsCount: response.friends?.length || 0,
         readingChallenge: {
-          goal: data.readingChallenge?.goal || 0,
-          current: data.readingChallenge?.current || 0
+          goal: response.readingChallenge?.goal || 0,
+          current: response.readingChallenge?.current || 0
         },
-        lastYearBooks: data.lastYearBooks || 0,
-        groups: data.groups || [],
-        genres: calculateGenres(data.booksRead || [])
+        lastYearBooks: response.lastYearBooks || 0,
+        groups: response.groups || [],
+        genres: calculateGenres(response.booksRead || [])
       });
       setLoading(false);
     } catch (error) {
       console.error("fetchUserData error:", error);
       setError(error.message || 'Failed to fetch user data');
-      if (error.status === 401) apiService.logout();
-   }
-};
+      if (error.response?.status === 401) {
+        apiService.logout();
+      }
+    }
+  }, [isAuthenticated, user]);
+
+  useEffect(() => {
+    if (!isLoading) {
+      fetchUserData();
+    }
+  }, [fetchUserData, isLoading]);
 
   const calculateGenres = (booksRead) => {
     const genreCounts = {};
@@ -65,27 +65,18 @@ const ProfilePage = () => {
     });
 
     return Object.entries(genreCounts)
-    .map(([name, count]) =>({name, count}))
-    .sort((a, b) => b.count - a.count)
-    .slice(0,4);
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 4);
   };
 
   const handleEditProfile = async (updatedData) => {
     try {
-      setLoading(true);
-      const userId = localStorage.getItem('userId');
-      if (!userId) {
-        throw new Error('User not authenticated');
-      }
-
-      // Using updateProfile from apiService
-      await apiService.updateProfile(userId, updatedData);
-      await fetchUserData(); // Refresh the data after update
+      await apiService.updateProfile(user.id, updatedData); // Use user.id as per the backend
+      await fetchUserData();
     } catch (error) {
       console.error('Error updating profile:', error);
       setError(error.message || 'Failed to update profile');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -94,7 +85,7 @@ const ProfilePage = () => {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center p-4">
           <p className="text-red-600 mb-4">{error}</p>
-          <button 
+          <button
             onClick={fetchUserData}
             className="bg-emerald-600 text-white px-4 py-2 rounded-md hover:bg-emerald-700"
           >
@@ -120,19 +111,20 @@ const ProfilePage = () => {
       {/* Header Banner */}
       <div className="relative h-32 sm:h-48 bg-gray-300">
         <div className="absolute bottom-0 left-4 sm:left-8 transform translate-y-1/2">
-          <img 
+          <img
             src={userData.profilePicture}
             alt="Profile"
             className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-4 border-white object-cover"
           />
         </div>
         <button
-        onClick={() => {
-          handleEditProfile({
-            bio: "Updated bio"
-          });
-        }}
-        className="absolute top-4 right-4 bg-white px-3 py-1 sm:px-4 sm:py-2 rounded-md text-sm">
+          onClick={() => {
+            handleEditProfile({
+              bio: "Updated bio"
+            });
+          }}
+          className="absolute top-4 right-4 bg-white px-3 py-1 sm:px-4 sm:py-2 rounded-md text-sm"
+        >
           Edit Profile
         </button>
       </div>
@@ -157,13 +149,13 @@ const ProfilePage = () => {
         <div className="flex px-4 sm:px-8 min-w-max">
           {[
             { name: 'PROFILE', count: null },
-            { name: 'BOOKS', count: userData.booksReadCount},
+            { name: 'BOOKS', count: userData.booksReadCount },
             { name: 'FOLLOWING', count: userData.followingCount },
             { name: 'FRIENDS', count: userData.friendsCount },
             { name: 'GROUPS', count: userData.groups.length },
             { name: 'REVIEWS', count: userData.booksRead?.length }
           ].map(({ name, count }) => (
-            <TabButton 
+            <TabButton
               key={name}
               name={name}
               count={count}
@@ -178,16 +170,10 @@ const ProfilePage = () => {
       <div className="max-w-4xl mx-auto py-4 sm:py-8 px-4">
         {activeTab === 'PROFILE' && (
           <div className="space-y-4 sm:space-y-6">
-            {/* Reading Stats Section */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-              {/* Reading Challenge */}
-              <ReadingChallengeCard stats={userData.yearlyChallenge} lastYear={userData.lastYearBooks} />
-              
-              {/* Top Genres */}
+              <ReadingChallengeCard stats={userData.readingChallenge} lastYear={userData.lastYearBooks} />
               <GenresCard genres={userData.genres} totalBooks={userData.booksReadCount} />
             </div>
-
-            {/* Groups Section */}
             <GroupsSection groups={userData.groups} />
           </div>
         )}
@@ -226,44 +212,36 @@ const ReadingChallengeCard = ({ stats, lastYear }) => (
       <Target className="text-emerald-600 mr-2 h-5 w-5" />
       <h2 className="text-lg font-semibold">Reading Challenge</h2>
     </div>
-    <div>
-      <div className="font-bold text-xl">{stats.current} / {stats.goal}</div>
-      <div className="text-gray-600">Books Read this Year</div>
-      <div className="text-gray-600">Last Year: {lastYear} Books</div>
-    </div>
+    <p>
+      {stats.current} / {stats.goal} books read this year.
+    </p>
+    <p>{lastYear} books read last year.</p>
   </div>
 );
 
 const GenresCard = ({ genres, totalBooks }) => (
   <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-    <div className="flex items-center mb-4">
-      <BookOpen className="text-emerald-600 mr-2 h-5 w-5" />
-      <h2 className="text-lg font-semibold">Top Genres</h2>
-    </div>
-    <ul>
-      {genres.map(genre => (
-        <li key={genre.name} className="flex justify-between">
-          <span>{genre.name}</span>
-          <span>{genre.count} ({((genre.count / totalBooks) * 100).toFixed(0)}%)</span>
-        </li>
-      ))}
-    </ul>
+    <h2 className="text-lg font-semibold mb-4">Top Genres</h2>
+    {genres.length > 0 ? (
+      genres.map((genre) => (
+        <p key={genre.name}>
+          {genre.name}: {genre.count} / {totalBooks} books
+        </p>
+      ))
+    ) : (
+      <p>No genres available</p>
+    )}
   </div>
 );
 
 const GroupsSection = ({ groups }) => (
   <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-    <div className="flex items-center mb-4">
-      <Users className="text-emerald-600 mr-2 h-5 w-5" />
-      <h2 className="text-lg font-semibold">Groups</h2>
-    </div>
-    <ul>
-      {groups.length === 0 ? (
-        <li>No groups found.</li>
-      ) : (
-        groups.map(group => <li key={group.id}>{group.name}</li>)
-      )}
-    </ul>
+    <h2 className="text-lg font-semibold mb-4">Groups</h2>
+    {groups.length > 0 ? (
+      groups.map((group) => <p key={group.name}>{group.name}</p>)
+    ) : (
+      <p>No groups joined</p>
+    )}
   </div>
 );
 
