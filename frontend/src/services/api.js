@@ -174,6 +174,13 @@ class ApiService {
             throw this.handleError(error);
         }
     }
+     async DeleteBook(id) {
+        try {
+            return await this.client.delete(`/books/id/${id}`);
+        } catch (error) {
+            throw this.handleError(error);
+        }
+     }
 
     async getBookById(id) {
         try {
@@ -194,6 +201,26 @@ class ApiService {
                 rating: reviewData.rating,
                 comment: reviewData.comment,
             });
+        } catch (error) {
+            throw this.handleError(error);
+        }
+    }
+    async getAllReviews() {
+        try {
+            const response = await this.client.get('/reviews');
+            return response.data;
+        } catch (error) {
+            throw this.handleError(error);
+        }
+    }
+
+    async updateReview(reviewId, updates) {
+        try {
+            if (!this.isAuthenticated()) {
+                throw new Error('Please sign in to update the review');
+            }
+            const response = await this.client.patch(`/reviews/id/${reviewId}`, updates);
+            return response.data;
         } catch (error) {
             throw this.handleError(error);
         }
@@ -258,6 +285,82 @@ class ApiService {
           throw this.handleError(error);
         }
       }
+      async getWishlist() {
+        try {
+            if (!this.isAuthenticated()) {
+                throw new Error('Please sign in to view your wishlist');
+            }
+            return await this.client.get('/wishlist');
+        } catch (error) {
+            throw this.handleError(error);
+        }
+    }
+
+    async addToWishlist(bookId) {
+        try {
+            if (!this.isAuthenticated()) {
+                throw new Error('Please sign in to add items to your wishlist');
+            }
+            return await this.client.post('/wishlist', { bookId });
+        } catch (error) {
+            throw this.handleError(error);
+        }
+    }
+
+    async removeFromWishlist(bookId) {
+        try {
+            if (!this.isAuthenticated()) {
+                throw new Error('Please sign in to remove items from your wishlist');
+            }
+            return await this.client.delete(`/wishlist/${bookId}`);
+        } catch (error) {
+            throw this.handleError(error);
+        }
+    }
+
+    // Get user's friends
+   async getFriends(userId) {
+    try {
+      const response = await axios.get(`/api/users/${userId}/friends`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching friends:', error);
+      throw error;
+    }
+  }
+
+  // Add a friend
+   async addFriend(userId, friendId) {
+    try {
+      const response = await axios.post(`/api/users/${userId}/friends`, { friendId });
+      return response.data;
+    } catch (error) {
+      console.error('Error adding friend:', error);
+      throw error;
+    }
+  }
+
+  // Remove a friend
+   async removeFriend(userId, friendId)  {
+    try {
+      const response = await axios.delete(`/api/users/${userId}/friends/${friendId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error removing friend:', error);
+      throw error;
+    }
+  }
+
+  // Get friend suggestions
+  async getFriendSuggestions(userId) {
+    try {
+      const response = await axios.get(`/api/users/${userId}/friend-suggestions`);
+      return response.data;
+    } catch (error) {
+      console.error('Error getting friend suggestions:', error);
+      throw error;
+    }
+  }
     // Auth status checks
     isAuthenticated() {
         return !!localStorage.getItem('authToken');

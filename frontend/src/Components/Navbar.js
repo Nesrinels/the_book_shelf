@@ -4,6 +4,7 @@ import { Search, Bell, Menu, X, Heart, User } from 'lucide-react';
 import logo from './logo/logo2.png';
 import {Cart} from './Cartpage/Cart';
 import {useAuth} from '../contexts/AuthContext';
+import { useWishlist } from '../contexts/WishlistContext';
 
 
 export default function Navbar() {
@@ -13,7 +14,7 @@ export default function Navbar() {
   const [userRole, setUserRole] = useState('');
   const navigate = useNavigate();
   const {isAuthenticated, setIsAuthenticated} = useAuth();
-
+  const { wishlistItems, fetchWishlistItems } = useWishlist();
   
 
   useEffect(() => {
@@ -49,6 +50,7 @@ export default function Navbar() {
 
   const toggleDropdown = () => {
     setShowDropdown(!showDropdown);
+    fetchWishlistItems();
   };
 
   const handleLogout = () => {
@@ -103,7 +105,9 @@ export default function Navbar() {
             <div className="flex items-center space-x-4">
               <button className="relative p-2 text-gray-600 hover:text-gray-900">
                 <Heart className="h-6 w-6" />
-                <span className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center text-xs text-white bg-red-500 rounded-full">4</span>
+                <span className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center text-xs text-white bg-red-500 rounded-full">
+                {wishlistItems.length}
+                </span>
               </button>
               <button className="relative p-2 text-gray-600 hover:text-gray-900">
                 <Bell className="h-6 w-6" />

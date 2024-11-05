@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { ShoppingCart, Heart, X } from 'lucide-react';
 import apiService from '../services/api';
 import { useCart } from '../contexts/CartContext';
-import {Link} from 'react-router-dom';
+import { useWishlist } from '../contexts/WishlistContext';
+import { Link } from 'react-router-dom';
 
 const categories = ['All', 'Fiction', 'Romance', 'Dystopian', 'Fantasy', 'Historical Fiction', 'Adventure'];
 
@@ -19,7 +20,9 @@ const Notification = ({ message, type, onClose }) => (
 
 const BookCard = ({ book, setNotification }) => {
   const [addingToCart, setAddingToCart] = useState(false);
-  const { addItem } = useCart();
+  const [addingToWishlist, setAddingToWishlist] = useState(false);
+  const { addItem: addToCart } = useCart();
+  const { addItem: addToWishlist, removeItem: removeFromWishlist, wishlistItems } = useWishlist();
 
   const handleAddToCart = async (e) => {
     e.preventDefault();
@@ -29,7 +32,7 @@ const BookCard = ({ book, setNotification }) => {
 
     setAddingToCart(true);
     try {
-      await addItem({
+      await addToCart({
         _id: book._id,
         title: book.title,
         author: book.author,
@@ -51,45 +54,81 @@ const BookCard = ({ book, setNotification }) => {
     }
   };
 
+  const handleAddToWishlist = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (addingToWishlist) return;
+
+    setAddingToWishlist(true);
+    try {
+      await addToWishlist(book);
+
+      setNotification({
+        message: 'Successfully added to wishlist!',
+        type: 'success'
+      });
+    } catch (error) {
+      setNotification({
+        message: error?.message || 'Failed to add to wishlist. Please try again later.',
+        type: 'error'
+      });
+    } finally {
+      setAddingToWishlist(false);
+    }
+  };
+
+  const isInWishlist = wishlistItems.some((item) => item._id === book._id);
+
   return (
     <Link to={`/books/${book._id}`} className="block bg-white rounded-lg overflow-hidden shadow-md transition-all duration-300 hover:shadow-xl" >
-    <div className="bg-white rounded-lg overflow-hidden shadow-md transition-all duration-300 hover:shadow-xl">
-      <div className="relative aspect-[3/4]">
-        <img
-          src={book.fullImageUrl}
-          alt={`Cover of ${book.title}`}
-          className="w-full h-full object-cover"
-          onError={(e) => {
-            e.target.onerror = null;
-            e.target.src = "/api/placeholder/300/400";
-          }}
-        />
-      </div>
-      <div className="p-4">
-        <h3 className="text-lg font-medium text-gray-900 truncate">{book.title}</h3>
-        <p className="text-sm text-gray-600">By {book.author}</p>
-        <p className="text-sm text-gray-500 mt-1 line-clamp-2">{book.description}</p>
-        <div className="mt-4 flex items-center justify-between">
-          <span className="text-lg font-bold text-emerald-700">
-            ${typeof book.price === 'number' ? book.price.toFixed(2) : book.price}
-          </span>
-          <div className="flex space-x-2">
-            <button
-              onClick={handleAddToCart}
-              disabled={addingToCart}
-              className={`p-2 rounded-full bg-emerald-700 text-white hover:bg-emerald-800 transition-colors ${
-                addingToCart ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
-            >
-              <ShoppingCart size={18} />
-            </button>
-            <button className="p-2 rounded-full bg-pink-600 text-white hover:bg-pink-700 transition-colors">
-              <Heart size={18} />
-            </button>
+      <div className="bg-white rounded-lg overflow-hidden shadow-md transition-all duration-300 hover:shadow-xl">
+        <div className="relative aspect-[3/4]">
+          <img
+            src={book.fullImageUrl}
+            alt={`Cover of ${book.title}`}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = "/api/placeholder/300/400";
+            }}
+          />
+        </div>
+        <div className="p-4">
+          <h3 className="text-lg font-medium text-gray-900 truncate">{book.title}</h3>
+          <p className="text-sm text-gray-600">By {book.author}</p>
+          <p className="text-sm text-gray-500 mt-1 line-clamp-2">{book.description}</p>
+          <div className="mt-4 flex items-center justify-between">
+            <span className="text-lg font-bold text-emerald-700">
+              ${typeof book.price === 'number' ? book.price.toFixed(2) : book.price}
+            </span>
+            <div className="flex space-x-2">
+              <button
+                onClick={handleAddToCart}
+                disabled={addingToCart}
+                className={`p-2 rounded-full bg-emerald-700 text-white hover:bg-emerald-800 transition-colors ${
+                  addingToCart ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                <ShoppingCart size={18} />
+              </button>
+              <button
+                onClick={isInWishlist ? () => removeFromWishlist(book._id) : handleAddToWishlist}
+                disabled={addingToWishlist}
+                className={`p-2 rounded-full ${
+                  isInWishlist
+                    ? 'bg-pink-600 text-white hover:bg-pink-700'
+                    : 'bg-gray-100 text-pink-600 hover:bg-gray-200'
+                } transition-colors ${
+                  addingToWishlist ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                <Heart size={18} />
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
     </Link>
   );
 };
@@ -119,10 +158,12 @@ const ShopPage = () => {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [notification, setNotification] = useState(null);
   const { fetchCartItems } = useCart();
+  const { fetchWishlistItems, wishlistItems } = useWishlist();
 
   useEffect(() => {
     fetchCartItems();
-  }, [fetchCartItems]);
+    fetchWishlistItems();
+  }, [fetchCartItems, fetchWishlistItems]);
 
   useEffect(() => {
     const fetchBooks = async () => {

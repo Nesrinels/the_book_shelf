@@ -1,5 +1,6 @@
 const express = require('express');
 const User = require('../Models/User');
+const Cart = require('../Models/Cart'); 
 const Group = require('../Models/Group');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -89,7 +90,6 @@ const userController = {
     }
 },
 
-
 updateReadingChallenge: async (req, res) => {
   try {
     const { userId } = req.params;
@@ -139,6 +139,135 @@ getLastYearBooks: async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
+},
+// Get friends
+getFriends: async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    const user = await User.findById(userId)
+      .populate('friends', 'username email profilePicture bio') // Added bio field
+      .select('friends');
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json(user.friends);
+  } catch (error) {
+    console.error('Error fetching friends:', error);
+    res.status(500).json({ message: 'Error fetching friends', error: error.message });
+  }
+},
+
+// Add friend
+addFriend: async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { friendId } = req.body;
+
+    // Check if users exist
+    const user = await User.findById(userId);
+    const friend = await User.findById(friendId);
+
+    if (!user || !friend) {
+      return res.status(404).json({ message: 'User or friend not found' });
+    }
+
+    // Check if they're already friends
+    if (user.friends.includes(friendId)) {
+      return res.status(400).json({ message: 'Users are already friends' });
+    }
+
+    // Add friend to both users (mutual friendship)
+    user.friends.push(friendId);
+    friend.friends.push(userId);
+
+    // Also add to following
+    if (!user.following.includes(friendId)) {
+      user.following.push(friendId);
+    }
+    if (!friend.following.includes(userId)) {
+      friend.following.push(userId);
+    }
+
+    await user.save();
+    await friend.save();
+
+    // Populate friend data before sending response
+    const populatedUser = await User.findById(userId)
+      .populate('friends', 'username email profilePicture bio')
+      .select('friends');
+
+    res.json({ 
+      message: 'Friend added successfully',
+      friends: populatedUser.friends
+    });
+  } catch (error) {
+    console.error('Error adding friend:', error);
+    res.status(500).json({ message: 'Error adding friend', error: error.message });
+  }
+},
+
+// Remove friend
+removeFriend: async (req, res) => {
+  try {
+    const { userId, friendId } = req.params;
+
+    // Remove friend and following relationships from both users
+    await User.findByIdAndUpdate(userId, {
+      $pull: { 
+        friends: friendId,
+        following: friendId
+      }
+    });
+    
+    await User.findByIdAndUpdate(friendId, {
+      $pull: { 
+        friends: userId,
+        following: userId
+      }
+    });
+
+    // Get updated friends list
+    const updatedUser = await User.findById(userId)
+      .populate('friends', 'username email profilePicture bio')
+      .select('friends');
+
+    res.json({ 
+      message: 'Friend removed successfully',
+      friends: updatedUser.friends
+    });
+  } catch (error) {
+    console.error('Error removing friend:', error);
+    res.status(500).json({ message: 'Error removing friend', error: error.message });
+  }
+},
+
+// Get friend suggestions
+getFriendSuggestions: async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Get users who aren't already friends or being followed
+    const suggestions = await User.find({
+      _id: { 
+        $nin: [...user.friends, ...user.following, userId] 
+      }
+    })
+    .select('username email profilePicture bio')
+    .limit(10); // Limit to 10 suggestions
+
+    res.json(suggestions);
+  } catch (error) {
+    console.error('Error getting friend suggestions:', error);
+    res.status(500).json({ message: 'Error getting friend suggestions', error: error.message });
+  }
 }
 };
 // Registration route
@@ -157,6 +286,12 @@ router.post('/register', async (req, res) => {
 
     // Create new user
     const newUser = new User({ username, email, password: hashedPassword });
+    await newUser.save();
+
+    // Create a new cart for the user
+    const cart = await Cart.create({ user: newUser._id });
+    // Associate the cart with the user
+    newUser.cart = cart._id;
     await newUser.save();
 
     res.status(201).json({ message: 'User registered successfully' });
@@ -215,9 +350,12 @@ router.get('/users', async (req, res) => {
   }
 });
 
+
+
 router.get('/users/:userId', authMiddleware, userController.getProfile);
 
 router.put('/users/:userId', authMiddleware, userController.updateProfile);
+
 // Protected profile route
 router.get('/profile', authMiddleware, (req, res) => {
   res.json({ message: 'This is your profile', userId: req.user });
@@ -225,5 +363,9 @@ router.get('/profile', authMiddleware, (req, res) => {
 
 router.put('/users/:userId/reading-challenge', authMiddleware, userController.updateReadingChallenge);
 router.get('/users/:userId/last-year-books', authMiddleware, userController.getLastYearBooks);
+router.get('/profile/:userId/friends', authMiddleware, userController.getFriends);
+router.post('/users/:userId/friends', authMiddleware, userController.addFriend);
+router.delete('/users/:userId/friends/:friendId', authMiddleware, userController.removeFriend);
+router.get('/users/:userId/friend-suggestions', authMiddleware, userController.getFriendSuggestions);
 
 module.exports = router;

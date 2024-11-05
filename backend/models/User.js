@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require('mongoose'); 
 const bcrypt = require('bcrypt');
 
 const userSchema = new mongoose.Schema({
@@ -16,13 +16,13 @@ const userSchema = new mongoose.Schema({
     type: String, 
     required: true 
   },
-  address:{
+  address: {
     type: String,
     required: true,
   },
-  profilePicture:{
+  profilePicture: {
     type: String,
-    default:"https://cdn-icons-png.flaticon.com/128/3177/3177440.png",
+    default: "https://cdn-icons-png.flaticon.com/128/3177/3177440.png",
   },
   bio: {
     type: String,
@@ -65,24 +65,20 @@ const userSchema = new mongoose.Schema({
     startDate: Date,
     progress: Number
   }],
-
   role: { 
     type: String, 
     enum: ['user', 'admin'],  
     default: 'user'           
   },
-  favorites:[
-    { type:mongoose.Types.ObjectId,
-    ref:"Book",
-  }],
-  cart:[
-    { type:mongoose.Types.ObjectId,
-    ref:"Book",
-  }],
-  orders:[
-    { type:mongoose.Types.ObjectId,
-    ref:"Order",
-  }],
+  favorites: [
+    { type: mongoose.Types.ObjectId, ref: "Wishlist" }
+  ],
+  cart: [
+    { type: mongoose.Types.ObjectId, ref: "Cart" }
+  ],
+  orders: [
+    { type: mongoose.Types.ObjectId, ref: "Order" }
+  ],
 }, { timestamps: true });
 
 // Hash password before saving

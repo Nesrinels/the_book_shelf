@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import apiService from '../services/api';
 import { Star, ShoppingCart, Heart} from 'lucide-react';
 import { useCart } from '../contexts/CartContext';
+import { useWishlist } from '../contexts/WishlistContext';
 
 export default function BookProductPage() {
   const { id } = useParams(); // Get the book ID from the URL
@@ -13,6 +14,36 @@ export default function BookProductPage() {
   const [addingToCart, setAddingToCart] = useState(false);
   const { addItem } = useCart();
   const [notification, setNotification] = useState(null);
+
+  const { addItem: addToWishlist, removeItem: removeFromWishlist, wishlistItems } = useWishlist();
+
+  const isInWishlist = wishlistItems.some((item) => item._id === book._id);
+
+  const handleAddToWishlist = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    try {
+      if (isInWishlist) {
+        await removeFromWishlist(book._id);
+        setNotification({
+          message: 'Removed from wishlist!',
+          type: 'success'
+        });
+      } else {
+        await addToWishlist(book);
+        setNotification({
+          message: 'Added to wishlist!',
+          type: 'success'
+        });
+      }
+    } catch (error) {
+      setNotification({
+        message: error?.message || 'Failed to update wishlist. Please try again later.',
+        type: 'error'
+      });
+    }
+  };
 
 
   const handleAddToCart = async (e) => {
@@ -106,9 +137,15 @@ export default function BookProductPage() {
           className="bg-emerald-700 text-white py-2 px-4 rounded-lg mr-2">
             <ShoppingCart size={18} className="inline-block mr-2" /> Add to Cart
           </button>
-          <button className="bg-pink-600 text-white py-2 px-4 rounded-lg">
-            <Heart size={18} className="inline-block mr-2" /> Add to Wishlist
-          </button>
+          <button
+        onClick={handleAddToWishlist}
+        className={`bg-pink-600 text-white py-2 px-4 rounded-lg ${
+          isInWishlist ? 'hover:bg-pink-700' : 'hover:bg-pink-700'
+        }`}
+      >
+        <Heart size={18} className="inline-block mr-2" />{' '}
+        {isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
+      </button>
           <div className="mt-8">
             <h2 className="text-2xl font-semibold mb-4">Reviews</h2>
             {reviews.length > 0 ? (

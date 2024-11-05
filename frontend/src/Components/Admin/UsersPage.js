@@ -27,15 +27,6 @@ const Users = () => {
     fetchUsers();
   }, [user?.id]);
 
-  const handleDeleteUser = async (userId) => {
-    try {
-      await apiService.delete(`/users/${userId}`);
-      setUsers(users.filter((u) => u.id !== userId));
-    } catch (error) {
-      console.error('Failed to delete user:', error);
-      alert(error.response?.data?.message || 'Failed to delete user');
-    }
-  };
 
   const handleRoleChange = async (userId, newRole) => {
     try {
@@ -90,7 +81,6 @@ const Users = () => {
                 <th className="py-3 px-4 border-b text-left">Username</th>
                 <th className="py-3 px-4 border-b text-left">Email</th>
                 <th className="py-3 px-4 border-b text-left">Role</th>
-                <th className="py-3 px-4 border-b text-left">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -107,18 +97,6 @@ const Users = () => {
                       <option value="user">User</option>
                       <option value="admin">Admin</option>
                     </select>
-                  </td>
-                  <td className="py-3 px-4">
-                    <button
-                      onClick={() => {
-                        if (window.confirm('Are you sure you want to delete this user?')) {
-                          handleDeleteUser(u.id);
-                        }
-                      }}
-                      className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600 transition-colors"
-                    >
-                      Delete
-                    </button>
                   </td>
                 </tr>
               ))}

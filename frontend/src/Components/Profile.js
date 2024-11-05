@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Target, Plus, Minus, BookOpen, Heart, MessageCircle, Book, Users } from 'lucide-react';
+import { Target, Plus, Minus, BookOpen, Heart, MessageCircle, Book, Users, UserPlus } from 'lucide-react';
 import apiService from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -13,6 +13,74 @@ const ProfilePage = () => {
   const [challengeGoal, setChallengeGoal] = useState(0);
   const [lastYearBooksList, setLastYearBooksList] = useState([]);
   const [showLastYearBooks, setShowLastYearBooks] = useState(false);
+  const [friendsToAdd, setFriendsToAdd] = useState([]);
+  
+
+
+  const [wishlistBooks, setWishlistBooks] = useState([]);
+  const [purchasedBooks, setPurchasedBooks] = useState([]);
+
+  useEffect(() => {
+    // Fetch wishlist and purchased books from the API
+    const fetchBooks = async () => {
+      try {
+        const wishlistResponse = await apiService.getWishlist(user.id);
+        setWishlistBooks(wishlistResponse);
+        // const purchasedResponse = await apiService.getPurchasedBooks(user.id);
+        // setPurchasedBooks(purchasedResponse);
+      } catch (error) {
+        console.error('Error fetching books:', error);
+        setError(error.message || 'Failed to fetch books');
+      }
+    };
+    fetchBooks();
+  }, [user.id]);
+
+
+  const handleRemoveFromWishlist = async (bookId) => {
+    try {
+      await apiService.removeFromWishlist(bookId);
+      setWishlistBooks(wishlistBooks.filter((book) => book._id !== bookId));
+    } catch (error) {
+      console.error('Error removing book from wishlist:', error);
+      setError(error.message || 'Failed to remove book from wishlist');
+    }
+  };
+
+  // // 3. Add friends section
+  // const [friends, setFriends] = useState([]);
+
+  // useEffect(() => {
+  //   // Fetch friends from the API
+  //   const fetchFriends = async () => {
+  //     try {
+  //       const friendsResponse = await apiService.getFriends(user.id);
+  //       setFriends(friendsResponse);
+  //     } catch (error) {
+  //       console.error('Error fetching friends:', error);
+  //       setError(error.message || 'Failed to fetch friends');
+  //     }
+  //   };
+  //   fetchFriends();
+  // }, [user.id]);
+
+
+  // 5. Add reviews section
+  const [reviews, setReviews] = useState([]);
+
+  useEffect(() => {
+    // Fetch reviews from the API
+    const fetchReviews = async () => {
+      try {
+        const reviewsResponse = await apiService.getAllReviews();
+        setReviews(reviewsResponse);
+      } catch (error) {
+        console.error('Error fetching reviews:', error);
+        setError(error.message || 'Failed to fetch reviews');
+      }
+    };
+    fetchReviews();
+  }, []);
 
   const fetchUserData = useCallback(async () => {
     if (!isAuthenticated || !user || !user.id) return;
@@ -35,7 +103,6 @@ const ProfilePage = () => {
           current: response.readingChallenge?.current || 0
         },
         lastYearBooks: response.lastYearBooks || [],
-        groups: response.groups || [],
         genres: calculateGenres(response.booksRead || [])
       });
       setLastYearBooksList(response.lastYearBooks || []);
@@ -158,7 +225,7 @@ const ProfilePage = () => {
       {/* Navigation */}
       <div className="border-b mt-6">
         <div className="flex px-4 sm:px-8 space-x-4 overflow-x-auto">
-          {['PROFILE', 'BOOKS', 'FOLLOWING', 'FRIENDS', 'GROUPS', 'REVIEWS'].map(tab => (
+          {['PROFILE', 'BOOKS', 'FOLLOWING', 'FRIENDS',  'REVIEWS'].map(tab => (
             <button
               key={tab}
               className={`px-4 py-2 font-medium whitespace-nowrap ${
@@ -227,17 +294,6 @@ const ProfilePage = () => {
               )}
             </div>
 
-            {/* Groups Card */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-semibold mb-4">Groups</h2>
-              {userData.groups.length > 0 ? (
-                userData.groups.map((group) => (
-                  <p key={group.name} className="py-1">{group.name}</p>
-                ))
-              ) : (
-                <p>No groups joined</p>
-              )}
-            </div>
           </div>
         )}
       </div>
@@ -284,8 +340,144 @@ const ProfilePage = () => {
           </div>
         </div>
       )}
+
+    {/* 2. Books section in the navigation bar
+    <div className="border-b mt-6">
+      <div className="flex px-4 sm:px-8 space-x-4 overflow-x-auto">
+        {['PROFILE', 'BOOKS', 'WISHLIST', 'PURCHASED', 'FOLLOWING', 'FRIENDS', 'REVIEWS'].map(tab => (
+          <button
+            key={tab}
+            className={`px-4 py-2 font-medium whitespace-nowrap ${
+              activeTab === tab
+                ? 'border-b-2 border-emerald-600 text-emerald-600'
+                : 'text-gray-600'
+            }`}
+            onClick={() => setActiveTab(tab)}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+    </div> */}
+
+    {/* Books, Wishlist, and Purchased sections */}
+    {activeTab === 'BOOKS' && (
+      <div className="space-y-6">
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-semibold mb-4">Books</h2>
+          {/* Add your books section content here */}
+        </div>
+      </div>
+    )}
+    {activeTab === 'WISHLIST' && (
+      <div className="space-y-6">
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-semibold mb-4">Wishlist</h2>
+          {wishlistBooks.length > 0 ? (
+            wishlistBooks.map((book) => (
+              <div key={book._id} className="flex items-center justify-between py-2">
+                <div className="flex items-center space-x-2">
+                  <Book className="h-4 w-4 text-gray-500" />
+                  <span>{book.title}</span>
+                </div>
+                <button
+                  onClick={() => handleRemoveFromWishlist(book._id)}
+                  className="text-emerald-600 hover:text-emerald-700"
+                >
+                  Remove
+                </button>
+              </div>
+            ))
+          ) : (
+            <p>Your wishlist is empty.</p>
+          )}
+        </div>
+      </div>
+    )}
+    {activeTab === 'PURCHASED' && (
+      <div className="space-y-6">
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-semibold mb-4">Purchased</h2>
+          {purchasedBooks.length > 0 ? (
+            purchasedBooks.map((book) => (
+              <div key={book._id} className="flex items-center justify-between py-2">
+                <div className="flex items-center space-x-2">
+                  <Book className="h-4 w-4 text-gray-500" />
+                  <span>{book.title}</span>
+                </div>
+                <button className="text-emerald-600 hover:text-emerald-700">
+                  Review
+                </button>
+              </div>
+            ))
+          ) : (
+            <p>No purchased books yet.</p>
+          )}
+        </div>
+      </div>
+    )}
+
+    {/* 3. Friends section
+    {activeTab === 'FRIENDS' && (
+      <div className="space-y-6">
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-semibold mb-4">Friends</h2>
+          {friends.length > 0 ? (
+            friends.map((friend) => (
+              <div key={friend.id} className="flex items-center space-x-4 py-2">
+                <img
+                  src={friend.profilePicture}
+                  alt={friend.username}
+                  className="w-12 h-12 rounded-full object-cover"
+                />
+                <div>
+                  <h3 className="font-medium">{friend.username}</h3>
+                  <p className="text-gray-600 text-sm">{friend.bio || 'No bio'}</p>
+                </div>
+              </div>
+            ))
+          ) : (
+            <p>No friends yet</p>
+          )}
+        </div>
+      </div>
+    )} */}
+
+
+    {/* 5. Reviews section */}
+    {activeTab === 'REVIEWS' && (
+      <div className="space-y-6">
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-semibold mb-4">Reviews</h2>
+          {reviews.length > 0 ? (
+            reviews.map((review) => (
+              <div key={review.id} className="flex items-start space-x-4 py-4 border-b">
+                <img
+                  src={review.user.profilePicture}
+                  alt={review.user.username}
+                  className="w-12 h-12 rounded-full object-cover"
+                />
+                <div>
+                  <h3 className="font-medium">{review.user.username}</h3>
+                  <p className="text-gray-600">{review.content}</p>
+                  <div className="flex items-center space-x-2 mt-2">
+                    <Heart className="h-4 w-4 text-red-500" />
+                    <span>{review.likes} likes</span>
+                    <MessageCircle className="h-4 w-4 text-gray-500" />
+                    <span>{review.comments.length} comments</span>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <p>No reviews available</p>
+          )}
+        </div>
+      </div>
+    )}
     </div>
   );
 };
+
 
 export default ProfilePage;

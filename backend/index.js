@@ -7,6 +7,8 @@ const bookRoutes = require('./routes/bookRoutes');
 const authRoutes = require('./routes/auth'); 
 const reviewRoutes = require('./routes/reviewRoutes');
 const cartRoutes = require('./routes/cartRoutes');
+const wishlistRoutes = require('./routes/wishlistRoutes');
+const groupRoutes = require('./routes/groupRoutes'); //
 dotenv.config();
 
 const app = express();
@@ -33,6 +35,8 @@ app.use('/api/books', bookRoutes);
 app.use('/api/auth', authRoutes); 
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/cart', cartRoutes);
+app.use('/api/wishlist', wishlistRoutes);
+app.use('/api/groups', groupRoutes);
 
 
 // Development vs Production setup
