@@ -90,6 +90,69 @@ const userController = {
     }
 },
 
+
+deleteUser: async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    // Check if the requesting user has permission to delete
+    if (req.user.role !== 'admin' && req.user._id.toString() !== userId) {
+      return res.status(403).json({ message: 'Unauthorized to delete this user' });
+    }
+
+    // Find and delete the user's cart
+    await Cart.findOneAndDelete({ user: userId });
+
+    // Remove user from all groups
+    await Group.updateMany(
+      { members: userId },
+      { $pull: { members: userId }}
+    );
+
+    // Remove user from other users' friends and following lists
+    await User.updateMany(
+      { $or: [{ friends: userId }, { following: userId }] },
+      { 
+        $pull: { 
+          friends: userId,
+          following: userId 
+        }
+      }
+    );
+
+    // Finally delete the user
+    const deletedUser = await User.findByIdAndDelete(userId);
+
+    if (!deletedUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({ message: 'User deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    res.status(500).json({ message: 'Error deleting user', error: error.message });
+  }
+},
+
+
+getUser: async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    const user = await User.findById(userId)
+      .select('-password') // Exclude password
+      .lean(); // Makes query faster by returning a plain JS object
+      
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json(user);
+  } catch (error) {
+    console.error('Error fetching user:', error);
+    res.status(500).json({ message: 'Error fetching user', error: error.message });
+  }
+},
 updateReadingChallenge: async (req, res) => {
   try {
     const { userId } = req.params;
@@ -309,7 +372,8 @@ router.post('/login', async (req, res) => {
   try {
     // Admin login check
     if (role === 'admin' && email === 'admin@example.com' && password === 'admin') {
-      const token = jwt.sign({ role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '1d' });
+      const adminId = 'admin';
+      const token = jwt.sign({ userId: adminId, role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '1d' });
       return res.status(200).json({ token, message: 'Admin login successful' });
     }
 
@@ -356,6 +420,8 @@ router.get('/users/:userId', authMiddleware, userController.getProfile);
 
 router.put('/users/:userId', authMiddleware, userController.updateProfile);
 
+router.delete('/users/:userId', authMiddleware, userController.deleteUser);
+router.get('/user/:userId', authMiddleware, userController.getUser);
 // Protected profile route
 router.get('/profile', authMiddleware, (req, res) => {
   res.json({ message: 'This is your profile', userId: req.user });

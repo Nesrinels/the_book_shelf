@@ -57,6 +57,19 @@ const authMiddleware = async (req, res, next) => {
       });
     }
 
+    // Special handling for admin role
+    if (decoded.role === 'admin') {
+      req.user = {
+        _id: decoded.userId,
+        role: 'admin'
+      };
+      req.token = token;
+      req.authMethod = 'jwt';
+      handleAuthenticatedRequest(req);
+      return next();
+    }
+
+
     if (!decoded.userId) {
       return res.status(401).json({ message: 'Invalid token payload' });
     }

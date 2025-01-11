@@ -261,6 +261,13 @@ class ApiService {
         }
     }
     
+    async deleteUser(userId) {
+        try {
+            return await this.client.delete(`/auth/users/${userId}`);
+        } catch (error) {
+            throw this.handleError(error);
+        }
+    }
     async updateProfile(userId, userData) {
         try {
             return await this.client.put(`/auth/users/${userId}`, userData);
