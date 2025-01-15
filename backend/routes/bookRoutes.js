@@ -48,13 +48,19 @@ router.get('/:id', async (req, res) => {
 router.post('/', authMiddleware, adminMiddleware, async (req, res) => {
   const book = new Book({
     title: req.body.title,
-    author: req.body.author,
-    description: req.body.description,
-    publishDate: req.body.publishDate,
-    pageCount: req.body.pageCount,
-    genre: req.body.genre,
-    isbn: req.body.isbn
-  });
+      author: req.body.author,
+      genre: req.body.genre,
+      price: req.body.price,
+      description: req.body.description,
+      publishedYear: req.body.publishedYear,
+      pages: req.body.pages,
+      inStock: req.body.inStock,
+      imageUrl: req.body.imageUrl,
+      averageRating: req.body.averageRating || 0, 
+      readers: req.body.readers || [], 
+      reviewsCount: req.body.reviewsCount || 0, 
+    });
+
 
   try {
     const newBook = await book.save();
@@ -65,34 +71,18 @@ router.post('/', authMiddleware, adminMiddleware, async (req, res) => {
 });
 
 // UPDATE a book (admin only)
-router.patch('/id/:id', authMiddleware, adminMiddleware, async (req, res) => {
+router.patch('/:id', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const book = await Book.findById(req.params.id);
     if (!book) {
       return res.status(404).json({ message: 'Book not found' });
     }
+    Object.keys(req.body).forEach((key) => {
+      if (book[key] !== undefined) {
+        book[key] = req.body[key];
+      }
+    });
 
-    if (req.body.title != null) {
-      book.title = req.body.title;
-    }
-    if (req.body.author != null) {
-      book.author = req.body.author;
-    }
-    if (req.body.description != null) {
-      book.description = req.body.description;
-    }
-    if (req.body.publishDate != null) {
-      book.publishDate = req.body.publishDate;
-    }
-    if (req.body.pageCount != null) {
-      book.pageCount = req.body.pageCount;
-    }
-    if (req.body.genre != null) {
-      book.genre = req.body.genre;
-    }
-    if (req.body.isbn != null) {
-      book.isbn = req.body.isbn;
-    }
 
     const updatedBook = await book.save();
     res.json(updatedBook);
@@ -102,14 +92,14 @@ router.patch('/id/:id', authMiddleware, adminMiddleware, async (req, res) => {
 });
 
 // DELETE a book (admin only)
-router.delete('/id/:id', authMiddleware, adminMiddleware, async (req, res) => {
+router.delete('/:id', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const book = await Book.findById(req.params.id);
     if (!book) {
       return res.status(404).json({ message: 'Book not found' });
     }
 
-    await book.remove();
+    await book.deleteOne();
     res.json({ message: 'Book deleted' });
   } catch (error) {
     res.status(500).json({ message: error.message });

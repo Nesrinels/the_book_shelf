@@ -106,6 +106,28 @@ userSchema.methods.updatePassword = async function(newPassword) {
   await this.save();
 };
 
+async function createAdminUser() {
+  try {
+    // Check if admin already exists
+    const adminExists = await User.findOne({ email: 'admin@example.com' });
+    if (!adminExists) {
+      const hashedPassword = await bcrypt.hash('admin', 10);
+      const adminUser = new User({
+        email: 'admin@example.com',
+        password: hashedPassword,
+        username: 'admin',
+        role: 'admin'
+      });
+      await adminUser.save();
+      console.log('Admin user created successfully');
+    }
+  } catch (error) {
+    console.error('Error creating admin user:', error);
+  }
+}
+
+createAdminUser();
+
 const User = mongoose.model('User', userSchema);
 
 module.exports = User;

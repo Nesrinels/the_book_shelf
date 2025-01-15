@@ -431,13 +431,13 @@ const BooksManagementPage = () => {
           <div className="flex gap-2">
             <button 
               onClick={() => openModal(book)}
-              className="p-1 text-emerald-600 hover:text-emerald-700 border border-emerald-600 rounded"
+              className="text-emerald-600 hover:text-emerald-800 p-1 rounded hover:bg-green-50"
             >
               <Edit className="w-4 h-4" />
             </button>
             <button 
               onClick={() => handleDelete(book.id)}
-              className="p-1 text-red-600 hover:text-red-700 border border-red-600 rounded"
+              className="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50"
             >
               <Trash2 className="w-4 h-4" />
             </button>
